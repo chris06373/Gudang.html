@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Gudang Terpadu - Personal Care</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans" x-data="warehouseApp()">
+
+    <div class="max-w-7xl mx-auto p-4 md:p-6">
+        
+        <!-- HEADER UTAMA -->
+        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <div>
+                <span class="bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Sistem Manajemen Gudang</span>
+                <h1 class="text-2xl font-bold text-slate-900 mt-1">Gudang Personal Care</h1>
+                <p class="text-sm text-slate-500">Permintaan barang (barang laku), order &amp; stok, serta stock opname dalam satu alur.</p>
+            </div>
+
+            <!-- Navigasi Tab Modul -->
+            <div class="flex flex-wrap gap-2 bg-slate-100 p-1.5 rounded-xl w-full lg:w-auto">
+                <button @click="activeTab = 'demand'"
+                    :class="activeTab === 'demand' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="flex-1 lg:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition">
+                    🔥 Permintaan Barang
+                </button>
+                <button @click="activeTab = 'order_stock'"
+                    :class="activeTab === 'order_stock' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="flex-1 lg:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition">
+                    🛒 Order &amp; Stock
+                </button>
+                <button @click="activeTab = 'opname'"
+                    :class="activeTab === 'opname' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="flex-1 lg:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition">
+                    📋 Stock Opname
+                </button>
+            </div>
+        </header>
+
+        <!-- KARTU RINGKASAN GLOBAL -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <p class="text-xs text-slate-400 font-semibold uppercase">Total SKU Aktif</p>
+                <p class="text-2xl font-bold text-slate-900 mt-1" x-text="products.length + ' SKU'"></p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <p class="text-xs text-slate-400 font-semibold uppercase">Barang Laku (Fast Moving)</p>
+                <p class="text-2xl font-bold text-amber-600 mt-1" x-text="fastMovingProducts.length + ' Produk'"></p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <p class="text-xs text-slate-400 font-semibold uppercase">Order Aktif (PO)</p>
+                <p class="text-2xl font-bold text-indigo-600 mt-1" x-text="orders.filter(o => o.status !== 'Diterima').length + ' Order'"></p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <p class="text-xs text-slate-400 font-semibold uppercase">Selisih Opname</p>
+                <p class="text-2xl font-bold text-rose-600 mt-1" x-text="products.filter(p => p.fisik !== p.sistem).length + ' Item'"></p>
+            </div>
+        </div>
+
+        <!-- SEARCH BAR GLOBAL -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-6 flex flex-col md:flex-row gap-3 justify-between items-center">
+            <div class="w-full md:w-96 relative">
+                <input type="text" x-model="search" placeholder="Cari SKU atau nama produk..."
+                    class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
+            </div>
+            <div class="flex gap-2 w-full md:w-auto justify-end">
+                <button @click="openProductModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition">
+                    + Tambah Produk
+                </button>
+                <button @click="openOrderModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-medium transition">
+                    + Buat Order Baru
+                </button>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- MODUL 1: PERMINTAAN BARANG (BARANG LAKU / FAST MOVING)            -->
+        <!-- =================================================================== -->
+        <section x-show="activeTab === 'demand'" class="space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">🔥 Permintaan Barang &amp; Barang Laku</h2>
+                        <p class="text-xs text-slate-500">Urutan produk berdasarkan permintaan keluar 30 hari terakhir &amp; estimasi ketahanan stok.</p>
+                    </div>
+                    <span class="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full font-semibold">
+                        Threshold Barang Laku: &ge; 150 pcs / 30 hari
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-100">
+                                <th class="p-4">SKU</th>
+                                <th class="p-4">Nama Produk</th>
+                                <th class="p-4">Permintaan (30 Hari)</th>
+                                <th class="p-4">Rata-rata / Hari</th>
+                                <th class="p-4">Stok Sistem</th>
+                                <th class="p-4">Est. Sisa Hari</th>
+                                <th class="p-4">Kategori Laku</th>
+                                <th class="p-4 text-center">Aksi Cepat</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="item in demandSortedProducts" :key="item.id">
+                                <tr class="hover:bg-slate-50/60 transition">
+                                    <td class="p-4 font-mono text-xs text-slate-500" x-text="item.sku"></td>
+                                    <td class="p-4 font-semibold text-slate-800" x-text="item.nama"></td>
+                                    <td class="p-4 font-bold text-slate-900" x-text="item.permintaan30Hari + ' pcs'"></td>
+                                    <td class="p-4 text-slate-600" x-text="dailyDemand(item).toFixed(1) + ' pcs/hr'"></td>
+                                    <td class="p-4 font-semibold text-slate-800" x-text="item.sistem + ' pcs'"></td>
+                                    <td class="p-4">
+                                        <span class="font-semibold"
+                                            :class="daysOfCover(item) <= 7 ? 'text-rose-600' : (daysOfCover(item) <= 14 ? 'text-amber-600' : 'text-emerald-600')"
+                                            x-text="daysOfCover(item) + ' hari'"></span>
+                                    </td>
+                                    <td class="p-4">
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold"
+                                            :class="item.permintaan30Hari >= 150 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'"
+                                            x-text="item.permintaan30Hari >= 150 ? 'Fast Moving' : 'Regular'"></span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <button @click="openOrderModal(item.id, suggestedOrderQty(item))"
+                                            class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white rounded-lg text-xs font-semibold transition">
+                                            + Order (<span x-text="suggestedOrderQty(item)"></span>)
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- MODUL 2: ORDER & STOCK                                              -->
+        <!-- =================================================================== -->
+        <section x-show="activeTab === 'order_stock'" class="space-y-6">
+            <!-- Daftar Stok & Min Stock -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">📦 Monitoring Stok &amp; Reorder Point</h2>
+                        <p class="text-xs text-slate-500">Pantau stok minimum (ROP) untuk mencegah kehabisan barang laku.</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-100">
+                                <th class="p-4">SKU</th>
+                                <th class="p-4">Produk</th>
+                                <th class="p-4">Stok Sistem</th>
+                                <th class="p-4">Min. Stok (ROP)</th>
+                                <th class="p-4">Status Stok</th>
+                                <th class="p-4 text-center">Restock</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="item in filteredProducts" :key="item.id">
+                                <tr class="hover:bg-slate-50/60 transition">
+                                    <td class="p-4 font-mono text-xs text-slate-500" x-text="item.sku"></td>
+                                    <td class="p-4 font-semibold text-slate-800" x-text="item.nama"></td>
+                                    <td class="p-4 font-bold text-slate-900" x-text="item.sistem + ' pcs'"></td>
+                                    <td class="p-4 text-slate-600" x-text="item.minStok + ' pcs'"></td>
+                                    <td class="p-4">
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold"
+                                            :class="item.sistem <= item.minStok ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'"
+                                            x-text="item.sistem <= item.minStok ? 'Perlu Restock' : 'Aman'"></span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <button @click="openOrderModal(item.id, suggestedOrderQty(item))"
+                                            class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition">
+                                            Buat PO
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Daftar Purchase Order (PO) -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">🛒 Daftar Order Pembelian (PO)</h2>
+                        <p class="text-xs text-slate-500">Klik "Terima Barang" saat barang dari supplier tiba di gudang.</p>
+                    </div>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold" x-text="orders.length + ' Order'"></span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-100">
+                                <th class="p-4">No. PO</th>
+                                <th class="p-4">Produk</th>
+                                <th class="p-4">Supplier</th>
+                                <th class="p-4">Jumlah Order</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="ord in orders" :key="ord.id">
+                                <tr class="hover:bg-slate-50/60 transition">
+                                    <td class="p-4 font-mono text-xs font-bold text-indigo-600" x-text="ord.kode"></td>
+                                    <td class="p-4 font-medium text-slate-800" x-text="ord.namaProduk"></td>
+                                    <td class="p-4 text-slate-600" x-text="ord.supplier"></td>
+                                    <td class="p-4 font-semibold text-slate-900" x-text="ord.qty + ' pcs'"></td>
+                                    <td class="p-4">
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold"
+                                            :class="ord.status === 'Diterima' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-700'"
+                                            x-text="ord.status"></span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <template x-if="ord.status !== 'Diterima'">
+                                            <button @click="receiveOrder(ord.id)"
+                                                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition">
+                                                ✓ Terima Barang
+                                            </button>
+                                        </template>
+                                        <template x-if="ord.status === 'Diterima'">
+                                            <span class="text-xs text-slate-400">Masuk Stok</span>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- MODUL 3: STOCK OPNAME + RIWAYAT                                     -->
+        <!-- =================================================================== -->
+        <section x-show="activeTab === 'opname'" class="space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">📋 Form Stock Opname Fisik</h2>
+                        <p class="text-xs text-slate-500">Input jumlah fisik aktual di rak, lalu simpan sesi untuk mencatat riwayat.</p>
+                    </div>
+                    <button @click="simpanOpname()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-medium transition">
+                        💾 Selesaikan &amp; Simpan Sesi
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-xs uppercase border-b border-slate-100">
+                                <th class="p-4">SKU</th>
+                                <th class="p-4">Nama Produk</th>
+                                <th class="p-4">Stok Sistem</th>
+                                <th class="p-4">Stok Fisik</th>
+                                <th class="p-4">Selisih</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="item in filteredProducts" :key="item.id">
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="p-4 font-mono text-xs text-slate-500" x-text="item.sku"></td>
+                                    <td class="p-4 font-medium text-slate-800" x-text="item.nama"></td>
+                                    <td class="p-4 text-slate-600" x-text="item.sistem + ' pcs'"></td>
+                                    <td class="p-4">
+                                        <input type="number" x-model.number="item.fisik"
+                                            class="w-24 px-2 py-1 border border-slate-200 rounded-lg text-sm font-semibold focus:outline-none focus:border-indigo-500">
+                                    </td>
+                                    <td class="p-4 font-semibold"
+                                        :class="(item.fisik - item.sistem) < 0 ? 'text-rose-600' : ((item.fisik - item.sistem) > 0 ? 'text-blue-600' : 'text-slate-500')"
+                                        x-text="((item.fisik - item.sistem) > 0 ? '+' : '') + (item.fisik - item.sistem) + ' pcs'"></td>
+                                    <td class="p-4">
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-medium"
+                                            :class="item.fisik === item.sistem ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'"
+                                            x-text="item.fisik === item.sistem ? 'Sesuai' : 'Selisih'"></span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <button @click="editProduct(item)" class="p-1.5 hover:bg-slate-100 rounded-lg" title="Edit">✏️</button>
+                                            <button @click="deleteProduct(item.id)" class="p-1.5 hover:bg-slate-100 rounded-lg" title="Hapus">🗑️</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Riwayat Stock Opname -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">📜 Riwayat Stock Opname</h3>
+                        <p class="text-xs text-slate-500">Tersimpan otomatis di browser (localStorage).</p>
+                    </div>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium" x-text="history.length + ' Sesi'"></span>
+                </div>
+
+                <template x-if="history.length === 0">
+                    <div class="text-center py-8 border-2 border-dashed border-slate-100 rounded-xl text-slate-400 text-sm">
+                        Belum ada sesi opname tersimpan.
+                    </div>
+                </template>
+
+                <div class="space-y-3" x-show="history.length > 0">
+                    <template x-for="log in history" :key="log.id">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-xl border border-slate-100 gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded" x-text="log.kode"></span>
+                                    <span class="text-sm font-semibold text-slate-800" x-text="log.waktu"></span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    Total: <b x-text="log.totalProduk"></b> produk •
+                                    Sesuai: <span class="text-emerald-600 font-semibold" x-text="log.sesuai"></span> •
+                                    Selisih: <span class="text-rose-600 font-semibold" x-text="log.selisih"></span>
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="selectedHistory = log" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium hover:border-indigo-500">
+                                    👁️ Detail
+                                </button>
+                                <button @click="hapusHistory(log.id)" class="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs hover:border-rose-500">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- MODAL 1: TAMBAH / EDIT PRODUK                                       -->
+        <!-- =================================================================== -->
+        <div x-show="showProductModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
+            <div @click.away="showProductModal = false" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+                <h3 class="text-lg font-bold text-slate-900 mb-4" x-text="isEdit ? 'Edit Produk' : 'Tambah Produk Baru'"></h3>
+                <form @submit.prevent="saveProduct()" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">SKU</label>
+                        <input type="text" x-model="productForm.sku" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Produk</label>
+                        <input type="text" x-model="productForm.nama" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Stok Sistem</label>
+                            <input type="number" x-model.number="productForm.sistem" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Stok Fisik</label>
+                            <input type="number" x-model.number="productForm.fisik" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Min. Stok (ROP)</label>
+                            <input type="number" x-model.number="productForm.minStok" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Permintaan / 30 Hari</label>
+                            <input type="number" x-model.number="productForm.permintaan30Hari" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-5">
+                        <button type="button" @click="showProductModal = false" class="px-4 py-2 border border-slate-200 rounded-xl text-sm">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- MODAL 2: BUAT ORDER (PO)                                            -->
+        <!-- =================================================================== -->
+        <div x-show="showOrderModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
+            <div @click.away="showOrderModal = false" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+                <h3 class="text-lg font-bold text-slate-900 mb-4">Buat Order Pembelian (PO)</h3>
+                <form @submit.prevent="createOrder()" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Pilih Produk</label>
+                        <select x-model.number="orderForm.productId" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                            <template x-for="p in products" :key="p.id">
+                                <option :value="p.id" x-text="p.sku + ' - ' + p.nama + ' (Stok: ' + p.sistem + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Supplier</label>
+                        <input type="text" x-model="orderForm.supplier" required placeholder="Contoh: PT Unilever Distributor" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Jumlah Order (pcs)</label>
+                        <input type="number" x-model.number="orderForm.qty" min="1" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <div class="flex justify-end gap-2 mt-5">
+                        <button type="button" @click="showOrderModal = false" class="px-4 py-2 border border-slate-200 rounded-xl text-sm">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-medium">Simpan PO</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- MODAL 3: DETAIL RIWAYAT OPNAME                                      -->
+        <!-- =================================================================== -->
+        <div x-show="selectedHistory !== null" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" style="display: none;">
+            <div @click.away="selectedHistory = null" class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl border border-slate-100 max-h-[85vh] flex flex-col">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                    <div>
+                        <span class="font-mono text-xs font-bold text-indigo-600" x-text="selectedHistory?.kode"></span>
+                        <h3 class="text-lg font-bold text-slate-900">Detail Arsip Stock Opname</h3>
+                        <p class="text-xs text-slate-500" x-text="'Waktu: ' + selectedHistory?.waktu"></p>
+                    </div>
+                    <button @click="selectedHistory = null" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+                </div>
+                <div class="overflow-y-auto flex-1 border border-slate-100 rounded-xl">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                            <tr>
+                                <th class="p-3">SKU</th>
+                                <th class="p-3">Produk</th>
+                                <th class="p-3">Sistem</th>
+                                <th class="p-3">Fisik</th>
+                                <th class="p-3">Selisih</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="d in selectedHistory?.items || []" :key="d.sku">
+                                <tr>
+                                    <td class="p-3 font-mono text-xs" x-text="d.sku"></td>
+                                    <td class="p-3 font-medium" x-text="d.nama"></td>
+                                    <td class="p-3" x-text="d.sistem"></td>
+                                    <td class="p-3 font-semibold" x-text="d.fisik"></td>
+                                    <td class="p-3 font-semibold" :class="(d.fisik - d.sistem) !== 0 ? 'text-rose-600' : 'text-emerald-600'"
+                                        x-text="((d.fisik - d.sistem) > 0 ? '+' : '') + (d.fisik - d.sistem)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function warehouseApp() {
+            return {
+                activeTab: 'demand',
+                search: '',
+                showProductModal: false,
+                showOrderModal: false,
+                isEdit: false,
+                selectedHistory: null,
+
+                productForm: {
+                    id: null, sku: '', nama: '', sistem: 0, fisik: 0, minStok: 50, permintaan30Hari: 0
+                },
+                orderForm: {
+                    productId: 1, supplier: '', qty: 50
+                },
+
+                products: [
+                    { id: 1, sku: 'PC-001', nama: 'Shampoo Pantene Anti-Dandruff 400ml', sistem: 150, fisik: 148, minStok: 80, permintaan30Hari: 240 },
+                    { id: 2, sku: 'PC-002', nama: 'Sabun Batang Lux Botanical 100g', sistem: 300, fisik: 300, minStok: 120, permintaan30Hari: 310 },
+                    { id: 3, sku: 'PC-003', nama: 'Pasta Gigi Pepsodent Complete 225g', sistem: 75, fisik: 70, minStok: 80, permintaan30Hari: 165 },
+                    { id: 4, sku: 'PC-004', nama: 'Skincare Glowing Serum Wardah 30ml', sistem: 40, fisik: 40, minStok: 35, permintaan30Hari: 95 },
+                    { id: 5, sku: 'PC-005', nama: 'Body Lotion Vaseline Healthy White', sistem: 90, fisik: 85, minStok: 70, permintaan30Hari: 180 }
+                ],
+
+                orders: [
+                    { id: 101, kode: 'PO-001', productId: 3, namaProduk: 'Pasta Gigi Pepsodent Complete 225g', supplier: 'Distributor Utama', qty: 100, status: 'Menunggu' }
+                ],
+
+                history: JSON.parse(localStorage.getItem('opname_history') || '[]'),
+
+                get filteredProducts() {
+                    return this.products.filter(p =>
+                        p.nama.toLowerCase().includes(this.search.toLowerCase()) ||
+                        p.sku.toLowerCase().includes(this.search.toLowerCase())
+                    );
+                },
+
+                get demandSortedProducts() {
+                    return [...this.filteredProducts].sort((a, b) => b.permintaan30Hari - a.permintaan30Hari);
+                },
+
+                get fastMovingProducts() {
+                    return this.products.filter(p => p.permintaan30Hari >= 150);
+                },
+
+                dailyDemand(item) {
+                    return item.permintaan30Hari / 30;
+                },
+
+                daysOfCover(item) {
+                    const daily = this.dailyDemand(item);
+                    if (daily <= 0) return 99;
+                    return Math.max(0, Math.floor(item.sistem / daily));
+                },
+
+                suggestedOrderQty(item) {
+                    // Target stok 14 hari ke depan dikurangi stok saat ini (minimal 20 pcs)
+                    const target14Days = Math.ceil(this.dailyDemand(item) * 14);
+                    const selisih = target14Days - item.sistem;
+                    return selisih > 20 ? selisih : 20;
+                },
+
+                openProductModal() {
+                    this.isEdit = false;
+                    this.productForm = { id: null, sku: '', nama: '', sistem: 0, fisik: 0, minStok: 50, permintaan30Hari: 0 };
+                    this.showProductModal = true;
+                },
+
+                editProduct(item) {
+                    this.isEdit = true;
+                    this.productForm = { ...item };
+                    this.showProductModal = true;
+                },
+
+                saveProduct() {
+                    if (this.isEdit) {
+                        const idx = this.products.findIndex(p => p.id === this.productForm.id);
+                        if (idx !== -1) this.products[idx] = { ...this.productForm };
+                    } else {
+                        this.products.push({ ...this.productForm, id: Date.now() });
+                    }
+                    this.showProductModal = false;
+                },
+
+                deleteProduct(id) {
+                    if (confirm('Hapus produk ini?')) {
+                        this.products = this.products.filter(p => p.id !== id);
+                    }
+                },
+
+                openOrderModal(productId = null, qty = 50) {
+                    this.orderForm = {
+                        productId: productId || (this.products[0]?.id ?? 1),
+                        supplier: 'Supplier Personal Care',
+                        qty: qty
+                    };
+                    this.showOrderModal = true;
+                },
+
+                createOrder() {
+                    const prod = this.products.find(p => p.id === this.orderForm.productId);
+                    if (!prod) return;
+
+                    this.orders.unshift({
+                        id: Date.now(),
+                        kode: 'PO-' + String(this.orders.length + 1).padStart(3, '0'),
+                        productId: prod.id,
+                        namaProduk: prod.nama,
+                        supplier: this.orderForm.supplier,
+                        qty: this.orderForm.qty,
+                        status: 'Menunggu'
+                    });
+                    this.showOrderModal = false;
+                    this.activeTab = 'order_stock';
+                },
+
+                receiveOrder(orderId) {
+                    const ord = this.orders.find(o => o.id === orderId);
+                    if (!ord || ord.status === 'Diterima') return;
+
+                    const prod = this.products.find(p => p.id === ord.productId);
+                    if (prod) {
+                        prod.sistem += ord.qty;
+                        prod.fisik += ord.qty;
+                    }
+                    ord.status = 'Diterima';
+                },
+
+                simpanOpname() {
+                    if (this.products.length === 0) return;
+
+                    const sekarang = new Date();
+                    const waktuFormat = sekarang.toLocaleDateString('id-ID', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+
+                    const recordBaru = {
+                        id: Date.now(),
+                        kode: 'OPN-' + String(this.history.length + 1).padStart(3, '0'),
+                        waktu: waktuFormat,
+                        totalProduk: this.products.length,
+                        sesuai: this.products.filter(i => i.fisik === i.sistem).length,
+                        selisih: this.products.filter(i => i.fisik !== i.sistem).length,
+                        items: JSON.parse(JSON.stringify(this.products))
+                    };
+
+                    this.history.unshift(recordBaru);
+                    localStorage.setItem('opname_history', JSON.stringify(this.history));
+
+                    if (confirm('Sesi opname tersimpan ke riwayat! Sinkronkan "Stok Sistem" agar sama dengan "Stok Fisik"?')) {
+                        this.products.forEach(p => p.sistem = p.fisik);
+                    }
+                },
+
+                hapusHistory(id) {
+                    if (confirm('Hapus riwayat opname ini?')) {
+                        this.history = this.history.filter(h => h.id !== id);
+                        localStorage.setItem('opname_history', JSON.stringify(this.history));
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
