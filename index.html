@@ -14,6 +14,8 @@ body{background:#f8fafc}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{min-width:780px}
 .mobile-card{display:none}
+.tabs-scroll{display:flex;gap:.375rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs-scroll::-webkit-scrollbar{display:none}
 @media(max-width:640px){
   .desktop-table{display:none}
   .mobile-card{display:block}
@@ -24,66 +26,89 @@ button:disabled{opacity:.4;cursor:not-allowed}
 </head>
 <body class="text-slate-800 font-sans" x-data="warehouseApp()" x-init="init()" x-cloak>
 <div class="max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
+  <!-- Hidden File Inputs for Excel Upload -->
+  <input type="file" x-ref="productExcelInput" accept=".xlsx,.xls,.csv" class="hidden" @change="handleProductExcelUpload($event)">
+  <input type="file" x-ref="serialExcelInput" accept=".xlsx,.xls,.csv" class="hidden" @change="handleSerialExcelUpload($event)">
+
   <!-- Header -->
-  <header class="flex flex-col xl:flex-row justify-between gap-4 mb-5 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+  <header class="flex flex-col xl:flex-row justify-between gap-4 mb-4 sm:mb-5 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
     <div>
       <div class="flex flex-wrap items-center gap-2">
-        <span class="bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Sistem Manajemen Gudang</span>
-        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Real-Time Sync
+        <span class="bg-indigo-50 text-indigo-600 text-[11px] sm:text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Sistem Manajemen Gudang</span>
+        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-full">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Real-Time · Mobile & Excel
         </span>
       </div>
-      <h1 class="text-2xl font-bold text-slate-900 mt-2">Gudang Personal Care</h1>
-      <p class="text-sm text-slate-500 mt-1">Permintaan barang, mutasi masuk/keluar, serial number, stok gudang & customer, PO, serta stock opname.</p>
+      <h1 class="text-xl sm:text-2xl font-bold text-slate-900 mt-2">Gudang Personal Care</h1>
+      <p class="text-xs sm:text-sm text-slate-500 mt-1">Permintaan barang, mutasi masuk/keluar, serial number, stok gudang & customer, PO, serta stock opname.</p>
     </div>
-    <div class="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-xl self-start xl:self-center">
-      <button @click="activeTab='demand'" :class="tabClass('demand')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🔥 Permintaan</button>
-      <button @click="activeTab='movements'" :class="tabClass('movements')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🔄 Masuk/Keluar</button>
-      <button @click="activeTab='locations'" :class="tabClass('locations')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏢 Gudang & Customer</button>
-      <button @click="activeTab='serials'" :class="tabClass('serials')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏷️ Serial Number</button>
-      <button @click="activeTab='order_stock'" :class="tabClass('order_stock')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🛒 PO & Stok</button>
-      <button @click="activeTab='opname'" :class="tabClass('opname')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">📋 Opname & Laporan</button>
+    <div class="bg-slate-100 p-1.5 rounded-xl w-full xl:w-auto">
+      <div class="tabs-scroll">
+        <button @click="activeTab='demand'" :class="tabClass('demand')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🔥 Permintaan</button>
+        <button @click="activeTab='movements'" :class="tabClass('movements')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🔄 Masuk/Keluar</button>
+        <button @click="activeTab='locations'" :class="tabClass('locations')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏢 Gudang & Customer</button>
+        <button @click="activeTab='serials'" :class="tabClass('serials')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏷️ Serial Number</button>
+        <button @click="activeTab='order_stock'" :class="tabClass('order_stock')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🛒 PO & Stok</button>
+        <button @click="activeTab='opname'" :class="tabClass('opname')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">📋 Opname & Laporan</button>
+      </div>
     </div>
   </header>
 
   <!-- Real-Time Summary Cards -->
-  <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
-    <div class="bg-white p-4 rounded-2xl border shadow-sm">
-      <p class="text-xs text-slate-400 font-semibold uppercase">Total SKU</p>
-      <p class="text-2xl font-bold mt-1" x-text="products.length"></p>
+  <section class="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3 mb-4 sm:mb-5">
+    <div class="bg-white p-3.5 sm:p-4 rounded-2xl border shadow-sm">
+      <p class="text-[11px] text-slate-400 font-semibold uppercase">Total SKU</p>
+      <p class="text-xl sm:text-2xl font-bold mt-1" x-text="products.length"></p>
       <p class="text-[11px] text-slate-400 mt-1" x-text="'Fast moving: '+fastMovingProducts.length+' SKU'"></p>
     </div>
-    <div class="bg-white p-4 rounded-2xl border shadow-sm">
-      <p class="text-xs text-slate-400 font-semibold uppercase">Stok Gudang</p>
-      <p class="text-2xl font-bold text-indigo-600 mt-1" x-text="totalWarehouseStock+' pcs'"></p>
+    <div class="bg-white p-3.5 sm:p-4 rounded-2xl border shadow-sm">
+      <p class="text-[11px] text-slate-400 font-semibold uppercase">Stok Gudang</p>
+      <p class="text-xl sm:text-2xl font-bold text-indigo-600 mt-1" x-text="totalWarehouseStock+' pcs'"></p>
       <p class="text-[11px] text-slate-400 mt-1" x-text="'Low stock: '+lowStockProducts.length+' SKU'"></p>
     </div>
-    <div class="bg-white p-4 rounded-2xl border shadow-sm">
-      <p class="text-xs text-slate-400 font-semibold uppercase">Stok Customer</p>
-      <p class="text-2xl font-bold text-amber-600 mt-1" x-text="totalCustomerStock+' pcs'"></p>
+    <div class="bg-white p-3.5 sm:p-4 rounded-2xl border shadow-sm">
+      <p class="text-[11px] text-slate-400 font-semibold uppercase">Stok Customer</p>
+      <p class="text-xl sm:text-2xl font-bold text-amber-600 mt-1" x-text="totalCustomerStock+' pcs'"></p>
       <p class="text-[11px] text-slate-400 mt-1" x-text="'Total aset: '+(totalWarehouseStock+totalCustomerStock)+' pcs'"></p>
     </div>
-    <div class="bg-white p-4 rounded-2xl border shadow-sm">
-      <p class="text-xs text-slate-400 font-semibold uppercase">Serial Terlacak</p>
-      <p class="text-2xl font-bold text-emerald-600 mt-1" x-text="serials.length"></p>
-      <p class="text-[11px] text-slate-400 mt-1" x-text="serials.filter(s=>s.lokasi==='Gudang').length+' di gudang · '+serials.filter(s=>s.lokasi==='Customer').length+' di customer'"></p>
+    <div class="bg-white p-3.5 sm:p-4 rounded-2xl border shadow-sm">
+      <p class="text-[11px] text-slate-400 font-semibold uppercase">Serial Terlacak</p>
+      <p class="text-xl sm:text-2xl font-bold text-emerald-600 mt-1" x-text="serials.length"></p>
+      <p class="text-[11px] text-slate-400 mt-1" x-text="serials.filter(s=>s.lokasi==='Gudang').length+' gudang · '+serials.filter(s=>s.lokasi==='Customer').length+' cust'"></p>
     </div>
-    <div class="bg-white p-4 rounded-2xl border shadow-sm col-span-2 lg:col-span-1">
-      <p class="text-xs text-slate-400 font-semibold uppercase">Selisih Opname</p>
-      <p class="text-2xl font-bold text-rose-600 mt-1" x-text="products.filter(p=>Number(p.fisik)!==Number(p.sistem)).length"></p>
+    <div class="bg-white p-3.5 sm:p-4 rounded-2xl border shadow-sm col-span-2 lg:col-span-1">
+      <p class="text-[11px] text-slate-400 font-semibold uppercase">Selisih Opname</p>
+      <p class="text-xl sm:text-2xl font-bold text-rose-600 mt-1" x-text="products.filter(p=>Number(p.fisik)!==Number(p.sistem)).length"></p>
       <p class="text-[11px] text-slate-400 mt-1" x-text="'PO aktif: '+orders.filter(o=>o.status!=='Diterima').length"></p>
     </div>
   </section>
 
-  <!-- Global Search & Quick Actions -->
-  <div class="bg-white p-3 sm:p-4 rounded-2xl border shadow-sm mb-5 flex flex-col lg:flex-row gap-2.5 lg:items-center lg:justify-between">
-    <input x-model="search" type="search" placeholder="Cari SKU, nama produk, atau customer..." class="w-full lg:max-w-md px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-indigo-500">
-    <div class="grid grid-cols-2 sm:flex flex-wrap gap-2">
-      <button @click="openProductModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold">+ Produk</button>
-      <button @click="openMovementModal('IN')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold">↓ Barang Masuk</button>
-      <button @click="openMovementModal('OUT')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold">↑ Barang Keluar</button>
-      <button @click="openOrderModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-2.5 rounded-xl text-sm font-semibold">+ Buat PO</button>
-      <button @click="clearStorage()" class="col-span-2 sm:col-span-1 border border-rose-200 text-rose-600 hover:bg-rose-50 px-3 py-2.5 rounded-xl text-sm font-semibold">Clear Storage</button>
+  <!-- Global Search, Excel Upload/Format & Quick Actions -->
+  <div class="bg-white p-3 sm:p-4 rounded-2xl border shadow-sm mb-4 sm:mb-5 space-y-3">
+    <div class="flex flex-col lg:flex-row gap-2.5 lg:items-center lg:justify-between">
+      <input x-model="search" type="search" placeholder="Cari SKU, nama produk, atau customer..." class="w-full lg:max-w-md px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+      <div class="grid grid-cols-2 sm:flex flex-wrap gap-2">
+        <button @click="openProductModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold">+ Produk</button>
+        <button @click="openMovementModal('IN')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold">↓ Masuk</button>
+        <button @click="openMovementModal('OUT')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold">↑ Keluar</button>
+        <button @click="openOrderModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold">+ Buat PO</button>
+        <button @click="clearStorage()" class="col-span-2 sm:col-span-1 border border-rose-200 text-rose-600 hover:bg-rose-50 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold">Clear Storage</button>
+      </div>
+    </div>
+
+    <!-- Excel Import & Format Bar -->
+    <div class="pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="font-semibold text-slate-600">📊 Input Excel:</span>
+        <button @click="$refs.productExcelInput.click()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-semibold">⬆ Import Produk & Stok</button>
+        <button @click="$refs.serialExcelInput.click()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-semibold">⬆ Import Serial Number</button>
+        <button @click="showFormatGuide=true" class="bg-amber-50 hover:bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg font-semibold">📄 Format Upload</button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button @click="downloadProductTemplate()" class="text-indigo-600 hover:underline font-semibold">⬇ Template Produk (.xlsx)</button>
+        <span class="text-slate-300">|</span>
+        <button @click="downloadSerialTemplate()" class="text-emerald-600 hover:underline font-semibold">⬇ Template Serial (.xlsx)</button>
+      </div>
     </div>
   </div>
 
@@ -91,8 +116,8 @@ button:disabled{opacity:.4;cursor:not-allowed}
   <section x-show="activeTab==='demand'" class="space-y-5">
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b">
-        <h2 class="font-bold text-lg">🔥 Permintaan Barang & Barang Laku</h2>
-        <p class="text-xs text-slate-500 mt-1">Diurutkan berdasarkan permintaan 30 hari terakhir. Fast moving ≥ 150 pcs. Stok sistem dihitung dari stok gudang + stok di customer.</p>
+        <h2 class="font-bold text-base sm:text-lg">🔥 Permintaan Barang & Barang Laku</h2>
+        <p class="text-xs text-slate-500 mt-1">Diurutkan berdasarkan permintaan 30 hari terakhir. Fast moving ≥ 150 pcs.</p>
       </div>
       <div class="table-wrap desktop-table">
         <table class="w-full text-sm text-left">
@@ -128,22 +153,24 @@ button:disabled{opacity:.4;cursor:not-allowed}
           </tbody>
         </table>
       </div>
-      <div class="mobile-card p-3 space-y-3">
+      <div class="mobile-card p-3 space-y-2.5">
         <template x-for="p in demandProducts" :key="p.id">
-          <div class="border rounded-xl p-3">
-            <div class="flex justify-between gap-2"><b x-text="p.nama"></b><span class="text-xs text-amber-700 font-semibold" x-text="p.permintaan30Hari>=150?'Fast Moving':'Regular'"></span></div>
-            <p class="text-xs text-slate-500 mt-1" x-text="p.sku"></p>
-            <div class="grid grid-cols-2 gap-2 text-sm mt-3">
-              <span>Permintaan: <b x-text="p.permintaan30Hari"></b></span>
-              <span>Gudang: <b x-text="p.sistem"></b></span>
-              <span>Customer: <b x-text="p.stokCustomer||0"></b></span>
-              <span>Sisa: <b x-text="daysOfCover(p)+' hari'"></b></span>
+          <div class="border rounded-xl p-3 bg-slate-50/40">
+            <div class="flex justify-between items-start gap-2">
+              <div><b class="text-sm" x-text="p.nama"></b><p class="text-[11px] font-mono text-slate-500" x-text="p.sku"></p></div>
+              <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold" :class="p.permintaan30Hari>=150?'bg-amber-100 text-amber-800':'bg-slate-200 text-slate-700'" x-text="p.permintaan30Hari>=150?'Fast Moving':'Regular'"></span>
             </div>
-            <button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="mt-3 w-full bg-indigo-50 text-indigo-700 rounded-lg py-2 text-sm font-semibold">+ Buat PO</button>
+            <div class="grid grid-cols-2 gap-2 text-xs mt-2.5 bg-white p-2.5 rounded-lg border">
+              <span>30 Hari: <b x-text="p.permintaan30Hari+' pcs'"></b></span>
+              <span>Sisa: <b x-text="daysOfCover(p)+' hari'"></b></span>
+              <span>Gudang: <b class="text-indigo-600" x-text="p.sistem+' pcs'"></b></span>
+              <span>Customer: <b class="text-amber-600" x-text="(p.stokCustomer||0)+' pcs'"></b></span>
+            </div>
+            <button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="mt-2.5 w-full bg-indigo-50 text-indigo-700 rounded-lg py-2 text-xs font-semibold">+ Buat PO (Saran: <span x-text="suggestedOrderQty(p)"></span> pcs)</button>
           </div>
         </template>
       </div>
-      <div x-show="!demandProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data produk. Klik <b>+ Produk</b> untuk menambahkan data.</div>
+      <div x-show="!demandProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data produk. Klik <b>+ Produk</b> atau <b>Import Produk & Stok</b>.</div>
     </div>
   </section>
 
@@ -152,20 +179,20 @@ button:disabled{opacity:.4;cursor:not-allowed}
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
-          <h2 class="font-bold text-lg">🔄 Pencatatan Barang Masuk & Keluar</h2>
-          <p class="text-xs text-slate-500 mt-1">Barang masuk menambah stok gudang; barang keluar dapat dikirim ke customer atau keluar umum, serta mendukung pencatatan serial number.</p>
+          <h2 class="font-bold text-base sm:text-lg">🔄 Pencatatan Barang Masuk & Keluar</h2>
+          <p class="text-xs text-slate-500 mt-1">Catat barang masuk ke gudang atau barang keluar ke customer/umum beserta serial number.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button @click="openMovementModal('IN')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">↓ Catat Masuk</button>
-          <button @click="openMovementModal('OUT')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">↑ Catat Keluar</button>
-          <button @click="exportMovements()" class="border border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Mutasi</button>
+          <button @click="openMovementModal('IN')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold">↓ Catat Masuk</button>
+          <button @click="openMovementModal('OUT')" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold">↑ Catat Keluar</button>
+          <button @click="exportMovements()" class="border border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold">⬇ Export</button>
         </div>
       </div>
 
       <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
-        <div class="flex flex-wrap gap-2 items-center">
-          <input x-model="movementSearch" @input="movementPage=1" placeholder="Cari produk, SKU, customer, serial, keterangan..." class="w-full sm:w-72 px-3 py-2.5 border rounded-xl text-sm">
-          <select x-model="movementTypeFilter" @change="movementPage=1" class="border rounded-xl px-3 py-2.5 text-sm">
+        <div class="flex flex-col sm:flex-row gap-2 sm:items-center w-full sm:w-auto">
+          <input x-model="movementSearch" @input="movementPage=1" placeholder="Cari produk, SKU, customer, serial..." class="w-full sm:w-72 px-3 py-2 border rounded-xl text-sm">
+          <select x-model="movementTypeFilter" @change="movementPage=1" class="border rounded-xl px-3 py-2 text-sm">
             <option value="ALL">Semua Mutasi</option>
             <option value="IN">Barang Masuk</option>
             <option value="OUT">Barang Keluar</option>
@@ -174,7 +201,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
         <span class="text-xs text-slate-500" x-text="movementFiltered.length+' transaksi'"></span>
       </div>
 
-      <div class="table-wrap">
+      <div class="table-wrap desktop-table">
         <table class="w-full text-sm text-left">
           <thead class="bg-slate-50 text-xs uppercase text-slate-400">
             <tr>
@@ -192,9 +219,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
             <template x-for="m in pagedMovements" :key="m.id">
               <tr>
                 <td class="p-4 text-xs text-slate-500 whitespace-nowrap" x-text="m.waktu"></td>
-                <td class="p-4">
-                  <span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="m.tipe==='IN'?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'" x-text="m.tipe==='IN'?'Masuk':'Keluar'"></span>
-                </td>
+                <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="m.tipe==='IN'?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'" x-text="m.tipe==='IN'?'Masuk':'Keluar'"></span></td>
                 <td class="p-4"><b x-text="m.namaProduk"></b><div class="text-xs font-mono text-slate-400" x-text="m.sku"></div></td>
                 <td class="p-4 font-bold" :class="m.tipe==='IN'?'text-emerald-600':'text-amber-600'" x-text="(m.tipe==='IN'?'+':'-')+m.qty+' pcs'"></td>
                 <td class="p-4" x-text="m.customer || (m.tipe==='IN'?'Gudang Utama':'Keluar Umum')"></td>
@@ -206,13 +231,35 @@ button:disabled{opacity:.4;cursor:not-allowed}
           </tbody>
         </table>
       </div>
+
+      <div class="mobile-card p-3 space-y-2.5">
+        <template x-for="m in pagedMovements" :key="m.id">
+          <div class="border rounded-xl p-3 bg-slate-50/40 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold" :class="m.tipe==='IN'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'" x-text="m.tipe==='IN'?'Barang Masuk':'Barang Keluar'"></span>
+              <span class="text-[11px] text-slate-400" x-text="m.waktu"></span>
+            </div>
+            <div class="flex justify-between items-start">
+              <div><b class="text-sm" x-text="m.namaProduk"></b><div class="text-[11px] font-mono text-slate-500" x-text="m.sku"></div></div>
+              <span class="text-sm font-bold" :class="m.tipe==='IN'?'text-emerald-600':'text-amber-600'" x-text="(m.tipe==='IN'?'+':'-')+m.qty+' pcs'"></span>
+            </div>
+            <div class="text-xs text-slate-600 space-y-1 bg-white p-2.5 rounded-lg border">
+              <div>Tujuan: <b x-text="m.customer || (m.tipe==='IN'?'Gudang Utama':'Keluar Umum')"></b></div>
+              <div x-show="m.serials&&m.serials.length">SN: <span class="font-mono" x-text="(m.serials||[]).join(', ')"></span></div>
+              <div x-show="m.catatan">Catatan: <span x-text="m.catatan"></span></div>
+            </div>
+            <div class="text-right"><button @click="deleteMovement(m.id)" class="text-rose-600 text-xs font-semibold">Hapus</button></div>
+          </div>
+        </template>
+      </div>
+
       <div x-show="!movementFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada catatan barang masuk atau keluar.</div>
       <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
         <p class="text-xs text-slate-500" x-text="pageInfo(movementPage,movementPageSize,movementFiltered.length)"></p>
         <div class="flex gap-2">
-          <button @click="movementPage=Math.max(1,movementPage-1)" :disabled="movementPage<=1" class="border px-3 py-2 rounded-lg text-sm">Sebelumnya</button>
-          <span class="px-3 py-2 text-sm" x-text="movementPage+' / '+movementTotalPages"></span>
-          <button @click="movementPage=Math.min(movementTotalPages,movementPage+1)" :disabled="movementPage>=movementTotalPages" class="border px-3 py-2 rounded-lg text-sm">Berikutnya</button>
+          <button @click="movementPage=Math.max(1,movementPage-1)" :disabled="movementPage<=1" class="border px-3 py-1.5 rounded-lg text-xs sm:text-sm">Sebelumnya</button>
+          <span class="px-3 py-1.5 text-xs sm:text-sm" x-text="movementPage+' / '+movementTotalPages"></span>
+          <button @click="movementPage=Math.min(movementTotalPages,movementPage+1)" :disabled="movementPage>=movementTotalPages" class="border px-3 py-1.5 rounded-lg text-xs sm:text-sm">Berikutnya</button>
         </div>
       </div>
     </div>
@@ -223,13 +270,13 @@ button:disabled{opacity:.4;cursor:not-allowed}
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 class="font-bold text-lg">🏢 Monitoring Stok di Gudang & di Customer</h2>
-          <p class="text-xs text-slate-500 mt-1">Pantau posisi stok fisik/sistem di gudang dan unit yang sedang berada di customer, serta lakukan retur atau transfer.</p>
+          <h2 class="font-bold text-base sm:text-lg">🏢 Monitoring Stok di Gudang & di Customer</h2>
+          <p class="text-xs text-slate-500 mt-1">Pantau posisi stok di gudang dan di customer, serta proses retur barang dari customer.</p>
         </div>
-        <button @click="openReturnModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">↩ Retur Customer ke Gudang</button>
+        <button @click="openReturnModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold">↩ Retur Customer ke Gudang</button>
       </div>
 
-      <div class="table-wrap">
+      <div class="table-wrap desktop-table">
         <table class="w-full text-sm text-left">
           <thead class="bg-slate-50 text-xs uppercase text-slate-400">
             <tr>
@@ -260,16 +307,35 @@ button:disabled{opacity:.4;cursor:not-allowed}
           </tbody>
         </table>
       </div>
+
+      <div class="mobile-card p-3 space-y-2.5">
+        <template x-for="p in filteredProducts" :key="p.id">
+          <div class="border rounded-xl p-3 bg-slate-50/40">
+            <div class="flex justify-between items-start">
+              <div><b class="text-sm" x-text="p.nama"></b><p class="text-[11px] font-mono text-slate-500" x-text="p.sku"></p></div>
+              <span class="text-xs font-bold text-slate-700" x-text="'Total: '+totalProductStock(p)+' pcs'"></span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs mt-2.5 bg-white p-2.5 rounded-lg border">
+              <span>Gudang: <b class="text-indigo-600" x-text="p.sistem+' pcs'"></b></span>
+              <span>Customer: <b class="text-amber-600" x-text="(p.stokCustomer||0)+' pcs'"></b></span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-2.5">
+              <button @click="openMovementModal('OUT',p.id)" class="bg-amber-50 text-amber-700 py-2 rounded-lg text-xs font-semibold">Kirim ke Cust</button>
+              <button @click="openReturnModal(p.id)" class="bg-indigo-50 text-indigo-700 py-2 rounded-lg text-xs font-semibold">Retur Masuk</button>
+            </div>
+          </div>
+        </template>
+      </div>
+
       <div x-show="!filteredProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data produk.</div>
     </div>
 
-    <!-- Rincian Stok per Customer -->
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b">
         <h3 class="font-bold text-base">👥 Rincian Barang di Tangan Customer</h3>
         <p class="text-xs text-slate-500 mt-1">Rekap unit aktif yang tercatat berada pada masing-masing customer.</p>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap desktop-table">
         <table class="w-full text-sm text-left">
           <thead class="bg-slate-50 text-xs uppercase text-slate-400">
             <tr>
@@ -293,6 +359,15 @@ button:disabled{opacity:.4;cursor:not-allowed}
           </tbody>
         </table>
       </div>
+      <div class="mobile-card p-3 space-y-2.5">
+        <template x-for="row in customerHoldings" :key="row.key">
+          <div class="border rounded-xl p-3 bg-slate-50/40 text-xs space-y-1">
+            <div class="flex justify-between"><b class="text-sm" x-text="row.customer"></b><span class="font-bold text-amber-600" x-text="row.qty+' pcs'"></span></div>
+            <div class="text-slate-600" x-text="row.namaProduk+' ('+row.sku+')'"></div>
+            <div class="font-mono text-[11px] text-slate-500" x-show="row.serials.length" x-text="'SN: '+row.serials.join(', ')"></div>
+          </div>
+        </template>
+      </div>
       <div x-show="!customerHoldings.length" class="p-8 text-center text-slate-400 text-sm">Belum ada stok aktif yang tercatat di customer.</div>
     </div>
   </section>
@@ -302,19 +377,20 @@ button:disabled{opacity:.4;cursor:not-allowed}
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
-          <h2 class="font-bold text-lg">🏷️ Tracking Barang Berdasarkan Serial Number</h2>
+          <h2 class="font-bold text-base sm:text-lg">🏷️ Tracking Barang Berdasarkan Serial Number</h2>
           <p class="text-xs text-slate-500 mt-1">Lacak posisi terkini, pemegang/customer, dan riwayat mutasi setiap serial number.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button @click="openSerialModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">+ Daftarkan Serial</button>
-          <button @click="exportSerials()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Serial</button>
+          <button @click="openSerialModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold">+ Daftarkan SN</button>
+          <button @click="$refs.serialExcelInput.click()" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold">⬆ Import SN</button>
+          <button @click="exportSerials()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold">⬇ Export SN</button>
         </div>
       </div>
 
       <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
-        <div class="flex flex-wrap gap-2 items-center">
-          <input x-model="serialSearch" @input="serialPage=1" placeholder="Cari serial number, SKU, produk, atau customer..." class="w-full sm:w-80 px-3 py-2.5 border rounded-xl text-sm">
-          <select x-model="serialLocationFilter" @change="serialPage=1" class="border rounded-xl px-3 py-2.5 text-sm">
+        <div class="flex flex-col sm:flex-row gap-2 sm:items-center w-full sm:w-auto">
+          <input x-model="serialSearch" @input="serialPage=1" placeholder="Cari serial number, SKU, produk, customer..." class="w-full sm:w-80 px-3 py-2 border rounded-xl text-sm">
+          <select x-model="serialLocationFilter" @change="serialPage=1" class="border rounded-xl px-3 py-2 text-sm">
             <option value="ALL">Semua Lokasi</option>
             <option value="Gudang">Gudang</option>
             <option value="Customer">Customer</option>
@@ -324,7 +400,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
         <span class="text-xs text-slate-500" x-text="serialFiltered.length+' serial'"></span>
       </div>
 
-      <div class="table-wrap">
+      <div class="table-wrap desktop-table">
         <table class="w-full text-sm text-left">
           <thead class="bg-slate-50 text-xs uppercase text-slate-400">
             <tr>
@@ -341,9 +417,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
               <tr>
                 <td class="p-4 font-mono font-bold text-indigo-600" x-text="s.sn"></td>
                 <td class="p-4"><b x-text="s.namaProduk"></b><div class="text-xs font-mono text-slate-400" x-text="s.sku"></div></td>
-                <td class="p-4">
-                  <span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="s.lokasi==='Gudang'?'bg-emerald-50 text-emerald-700':(s.lokasi==='Customer'?'bg-amber-50 text-amber-700':'bg-slate-100 text-slate-600')" x-text="s.lokasi"></span>
-                </td>
+                <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="s.lokasi==='Gudang'?'bg-emerald-50 text-emerald-700':(s.lokasi==='Customer'?'bg-amber-50 text-amber-700':'bg-slate-100 text-slate-600')" x-text="s.lokasi"></span></td>
                 <td class="p-4 text-xs" x-text="s.customer||'-'"></td>
                 <td class="p-4 text-xs text-slate-500" x-text="s.updatedAt"></td>
                 <td class="p-4 flex gap-2">
@@ -355,13 +429,34 @@ button:disabled{opacity:.4;cursor:not-allowed}
           </tbody>
         </table>
       </div>
-      <div x-show="!serialFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data serial number. Daftarkan saat input serial atau saat mencatat barang masuk/keluar.</div>
+
+      <div class="mobile-card p-3 space-y-2.5">
+        <template x-for="s in pagedSerials" :key="s.sn">
+          <div class="border rounded-xl p-3 bg-slate-50/40 space-y-2">
+            <div class="flex justify-between items-center">
+              <b class="font-mono text-sm text-indigo-600" x-text="s.sn"></b>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold" :class="s.lokasi==='Gudang'?'bg-emerald-100 text-emerald-800':(s.lokasi==='Customer'?'bg-amber-100 text-amber-800':'bg-slate-200 text-slate-700')" x-text="s.lokasi"></span>
+            </div>
+            <div class="text-xs"><b x-text="s.namaProduk"></b> <span class="font-mono text-slate-400" x-text="'('+s.sku+')'"></span></div>
+            <div class="text-xs text-slate-500 flex justify-between">
+              <span x-text="s.customer?('Cust: '+s.customer):'-'"></span>
+              <span class="text-[11px]" x-text="s.updatedAt"></span>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button @click="selectedSerial=s" class="flex-1 border bg-white py-1.5 rounded-lg text-xs font-semibold">Riwayat</button>
+              <button @click="deleteSerial(s.sn)" class="px-3 border border-rose-200 text-rose-600 bg-white py-1.5 rounded-lg text-xs font-semibold">Hapus</button>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div x-show="!serialFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data serial number. Daftarkan manual atau import via Excel.</div>
       <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
         <p class="text-xs text-slate-500" x-text="pageInfo(serialPage,serialPageSize,serialFiltered.length)"></p>
         <div class="flex gap-2">
-          <button @click="serialPage=Math.max(1,serialPage-1)" :disabled="serialPage<=1" class="border px-3 py-2 rounded-lg text-sm">Sebelumnya</button>
-          <span class="px-3 py-2 text-sm" x-text="serialPage+' / '+serialTotalPages"></span>
-          <button @click="serialPage=Math.min(serialTotalPages,serialPage+1)" :disabled="serialPage>=serialTotalPages" class="border px-3 py-2 rounded-lg text-sm">Berikutnya</button>
+          <button @click="serialPage=Math.max(1,serialPage-1)" :disabled="serialPage<=1" class="border px-3 py-1.5 rounded-lg text-xs sm:text-sm">Sebelumnya</button>
+          <span class="px-3 py-1.5 text-xs sm:text-sm" x-text="serialPage+' / '+serialTotalPages"></span>
+          <button @click="serialPage=Math.min(serialTotalPages,serialPage+1)" :disabled="serialPage>=serialTotalPages" class="border px-3 py-1.5 rounded-lg text-xs sm:text-sm">Berikutnya</button>
         </div>
       </div>
     </div>
@@ -370,23 +465,54 @@ button:disabled{opacity:.4;cursor:not-allowed}
   <!-- 5. ORDER & STOCK -->
   <section x-show="activeTab==='order_stock'" class="space-y-5">
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-      <div class="p-4 sm:p-5 border-b"><h2 class="font-bold text-lg">📦 Monitoring Stok & Reorder Point</h2><p class="text-xs text-slate-500 mt-1">Status stok berdasarkan minimum stok gudang setiap produk.</p></div>
-      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Stok Gudang</th><th class="p-4">Stok Customer</th><th class="p-4">Min. Stok</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4 font-semibold" x-text="p.sistem+' pcs'"></td><td class="p-4 text-amber-600 font-semibold" x-text="(p.stokCustomer||0)+' pcs'"></td><td class="p-4" x-text="p.minStok+' pcs'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold" :class="p.sistem<=p.minStok?'bg-rose-50 text-rose-600':'bg-emerald-50 text-emerald-600'" x-text="p.sistem<=p.minStok?'Perlu Restock':'Aman'"></span></td><td class="p-4"><button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-semibold">Buat PO</button></td></tr></template></tbody></table></div>
+      <div class="p-4 sm:p-5 border-b"><h2 class="font-bold text-base sm:text-lg">📦 Monitoring Stok & Reorder Point</h2><p class="text-xs text-slate-500 mt-1">Status stok berdasarkan minimum stok gudang setiap produk.</p></div>
+      <div class="table-wrap desktop-table"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Stok Gudang</th><th class="p-4">Stok Customer</th><th class="p-4">Min. Stok</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4 font-semibold" x-text="p.sistem+' pcs'"></td><td class="p-4 text-amber-600 font-semibold" x-text="(p.stokCustomer||0)+' pcs'"></td><td class="p-4" x-text="p.minStok+' pcs'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold" :class="p.sistem<=p.minStok?'bg-rose-50 text-rose-600':'bg-emerald-50 text-emerald-600'" x-text="p.sistem<=p.minStok?'Perlu Restock':'Aman'"></span></td><td class="p-4"><button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-semibold">Buat PO</button></td></tr></template></tbody></table></div>
+      <div class="mobile-card p-3 space-y-2.5">
+        <template x-for="p in filteredProducts" :key="p.id">
+          <div class="border rounded-xl p-3 bg-slate-50/40">
+            <div class="flex justify-between items-start gap-2">
+              <div><b class="text-sm" x-text="p.nama"></b><p class="text-[11px] font-mono text-slate-500" x-text="p.sku"></p></div>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold" :class="p.sistem<=p.minStok?'bg-rose-100 text-rose-700':'bg-emerald-100 text-emerald-700'" x-text="p.sistem<=p.minStok?'Perlu Restock':'Aman'"></span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-xs mt-2.5 bg-white p-2 rounded-lg border">
+              <span>Gudang: <b x-text="p.sistem"></b></span>
+              <span>Cust: <b class="text-amber-600" x-text="p.stokCustomer||0"></b></span>
+              <span>Min: <b x-text="p.minStok"></b></span>
+            </div>
+            <button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="mt-2.5 w-full bg-slate-900 text-white py-2 rounded-lg text-xs font-semibold">Buat PO</button>
+          </div>
+        </template>
+      </div>
       <div x-show="!filteredProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data stok produk.</div>
     </div>
 
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div><h2 class="font-bold text-lg">🛒 Daftar Order Pembelian (PO)</h2><p class="text-xs text-slate-500 mt-1">Terima PO untuk menambah stok gudang secara otomatis dan mencatat mutasi masuk.</p></div>
-        <button @click="exportOrders()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Excel</button>
+        <div><h2 class="font-bold text-base sm:text-lg">🛒 Daftar Order Pembelian (PO)</h2><p class="text-xs text-slate-500 mt-1">Terima PO untuk menambah stok gudang secara otomatis dan mencatat mutasi masuk.</p></div>
+        <button @click="exportOrders()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold">⬇ Export Excel</button>
       </div>
       <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
-        <input x-model="orderSearch" @input="orderPage=1" placeholder="Cari nomor PO, produk, supplier, status..." class="w-full sm:max-w-md px-3 py-2.5 border rounded-xl text-sm">
-        <div class="flex items-center gap-2 text-sm"><span class="text-slate-500">Baris:</span><select x-model.number="orderPageSize" @change="orderPage=1" class="border rounded-lg px-2 py-2"><option :value="5">5</option><option :value="10">10</option><option :value="20">20</option><option :value="50">50</option></select><span class="text-slate-500" x-text="orderFiltered.length+' hasil'"></span></div>
+        <input x-model="orderSearch" @input="orderPage=1" placeholder="Cari nomor PO, produk, supplier, status..." class="w-full sm:max-w-md px-3 py-2 border rounded-xl text-sm">
+        <div class="flex items-center gap-2 text-xs sm:text-sm"><span class="text-slate-500">Baris:</span><select x-model.number="orderPageSize" @change="orderPage=1" class="border rounded-lg px-2 py-1.5"><option :value="5">5</option><option :value="10">10</option><option :value="20">20</option><option :value="50">50</option></select><span class="text-slate-500" x-text="orderFiltered.length+' hasil'"></span></div>
       </div>
-      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">No. PO</th><th class="p-4">Produk</th><th class="p-4">Supplier</th><th class="p-4">Jumlah</th><th class="p-4">Tanggal</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="o in pagedOrders" :key="o.id"><tr><td class="p-4 font-mono font-bold text-indigo-600" x-text="o.kode"></td><td class="p-4 font-medium" x-text="o.namaProduk"></td><td class="p-4" x-text="o.supplier"></td><td class="p-4" x-text="o.qty+' pcs'"></td><td class="p-4" x-text="o.tanggal||'-'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold" :class="o.status==='Diterima'?'bg-emerald-50 text-emerald-600':'bg-amber-50 text-amber-700'" x-text="o.status"></span></td><td class="p-4"><button x-show="o.status!=='Diterima'" @click="receiveOrder(o.id)" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Terima</button></td></tr></template></tbody></table></div>
+      <div class="table-wrap desktop-table"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">No. PO</th><th class="p-4">Produk</th><th class="p-4">Supplier</th><th class="p-4">Jumlah</th><th class="p-4">Tanggal</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="o in pagedOrders" :key="o.id"><tr><td class="p-4 font-mono font-bold text-indigo-600" x-text="o.kode"></td><td class="p-4 font-medium" x-text="o.namaProduk"></td><td class="p-4" x-text="o.supplier"></td><td class="p-4" x-text="o.qty+' pcs'"></td><td class="p-4" x-text="o.tanggal||'-'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold" :class="o.status==='Diterima'?'bg-emerald-50 text-emerald-600':'bg-amber-50 text-amber-700'" x-text="o.status"></span></td><td class="p-4"><button x-show="o.status!=='Diterima'" @click="receiveOrder(o.id)" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Terima</button></td></tr></template></tbody></table></div>
+      <div class="mobile-card p-3 space-y-2.5">
+        <template x-for="o in pagedOrders" :key="o.id">
+          <div class="border rounded-xl p-3 bg-slate-50/40 space-y-2">
+            <div class="flex justify-between items-center">
+              <b class="font-mono text-xs text-indigo-600" x-text="o.kode"></b>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold" :class="o.status==='Diterima'?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-800'" x-text="o.status"></span>
+            </div>
+            <div class="text-xs"><b class="text-sm" x-text="o.namaProduk"></b> · <span class="text-slate-500" x-text="o.supplier"></span></div>
+            <div class="flex justify-between items-center text-xs pt-1">
+              <span>Qty: <b x-text="o.qty+' pcs'"></b> · <span class="text-slate-400" x-text="o.tanggal||'-'"></span></span>
+              <button x-show="o.status!=='Diterima'" @click="receiveOrder(o.id)" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">Terima</button>
+            </div>
+          </div>
+        </template>
+      </div>
       <div x-show="!orderFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data PO.</div>
-      <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center"><p class="text-xs text-slate-500" x-text="pageInfo(orderPage,orderPageSize,orderFiltered.length)"></p><div class="flex gap-2"><button @click="orderPage=Math.max(1,orderPage-1)" :disabled="orderPage<=1" class="border px-3 py-2 rounded-lg text-sm">Sebelumnya</button><span class="px-3 py-2 text-sm" x-text="orderPage+' / '+orderTotalPages"></span><button @click="orderPage=Math.min(orderTotalPages,orderPage+1)" :disabled="orderPage>=orderTotalPages" class="border px-3 py-2 rounded-lg text-sm">Berikutnya</button></div></div>
+      <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center"><p class="text-xs text-slate-500" x-text="pageInfo(orderPage,orderPageSize,orderFiltered.length)"></p><div class="flex gap-2"><button @click="orderPage=Math.max(1,orderPage-1)" :disabled="orderPage<=1" class="border px-3 py-1.5 rounded-lg text-xs sm:text-sm">Sebelumnya</button><span class="px-3 py-1.5 text-xs sm:text-sm" x-text="orderPage+' / '+orderTotalPages"></span><button @click="orderPage=Math.min(orderTotalPages,orderPage+1)" :disabled="orderPage>=orderTotalPages" class="border px-3 py-1.5 rounded-lg text-xs sm:text-sm">Berikutnya</button></div></div>
     </div>
   </section>
 
@@ -395,27 +521,86 @@ button:disabled{opacity:.4;cursor:not-allowed}
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
-          <h2 class="font-bold text-lg">📋 Stock Opname Fisik & Laporan Inventory</h2>
+          <h2 class="font-bold text-base sm:text-lg">📋 Stock Opname Fisik & Laporan Inventory</h2>
           <p class="text-xs text-slate-500 mt-1">Masukkan stok fisik gudang aktual, simpan sesi opname, atau unduh laporan inventory lengkap ke Excel.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button @click="exportInventoryReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">📊 Export Laporan Inventory</button>
-          <button @click="saveOpname()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">💾 Simpan Sesi Opname</button>
+          <button @click="exportInventoryReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold">📊 Export Inventory</button>
+          <button @click="saveOpname()" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold">💾 Simpan Sesi</button>
         </div>
       </div>
-      <div class="p-3"><input x-model="search" placeholder="Cari SKU atau produk..." class="w-full sm:max-w-sm px-3 py-2.5 border rounded-xl text-sm"></div>
-      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Gudang (Sistem)</th><th class="p-4">Customer</th><th class="p-4">Fisik Gudang</th><th class="p-4">Selisih</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4" x-text="p.sistem"></td><td class="p-4 text-amber-600 font-semibold" x-text="p.stokCustomer||0"></td><td class="p-4"><input type="number" min="0" x-model.number="p.fisik" class="w-24 border rounded-lg px-2 py-2"></td><td class="p-4 font-semibold" :class="p.fisik-p.sistem<0?'text-rose-600':(p.fisik-p.sistem>0?'text-blue-600':'text-emerald-600')" x-text="(p.fisik-p.sistem>0?'+':'')+(p.fisik-p.sistem)"></td><td class="p-4"><button @click="editProduct(p)" class="mr-2">✏️</button><button @click="deleteProduct(p.id)">🗑️</button></td></tr></template></tbody></table></div>
+      <div class="p-3"><input x-model="search" placeholder="Cari SKU atau produk..." class="w-full sm:max-w-sm px-3 py-2 border rounded-xl text-sm"></div>
+      <div class="table-wrap desktop-table"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Gudang (Sistem)</th><th class="p-4">Customer</th><th class="p-4">Fisik Gudang</th><th class="p-4">Selisih</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4" x-text="p.sistem"></td><td class="p-4 text-amber-600 font-semibold" x-text="p.stokCustomer||0"></td><td class="p-4"><input type="number" min="0" x-model.number="p.fisik" class="w-24 border rounded-lg px-2 py-2"></td><td class="p-4 font-semibold" :class="p.fisik-p.sistem<0?'text-rose-600':(p.fisik-p.sistem>0?'text-blue-600':'text-emerald-600')" x-text="(p.fisik-p.sistem>0?'+':'')+(p.fisik-p.sistem)"></td><td class="p-4"><button @click="editProduct(p)" class="mr-2">✏️</button><button @click="deleteProduct(p.id)">🗑️</button></td></tr></template></tbody></table></div>
+      <div class="mobile-card p-3 space-y-2.5">
+        <template x-for="p in filteredProducts" :key="p.id">
+          <div class="border rounded-xl p-3 bg-slate-50/40 space-y-2">
+            <div class="flex justify-between items-start">
+              <div><b class="text-sm" x-text="p.nama"></b><p class="text-[11px] font-mono text-slate-500" x-text="p.sku"></p></div>
+              <span class="text-xs font-bold" :class="p.fisik-p.sistem<0?'text-rose-600':(p.fisik-p.sistem>0?'text-blue-600':'text-emerald-600')" x-text="'Selisih: '+(p.fisik-p.sistem>0?'+':'')+(p.fisik-p.sistem)"></span>
+            </div>
+            <div class="flex items-center justify-between text-xs bg-white p-2.5 rounded-lg border">
+              <span>Sistem: <b x-text="p.sistem"></b> · Cust: <b class="text-amber-600" x-text="p.stokCustomer||0"></b></span>
+              <label class="flex items-center gap-1.5 font-semibold">Fisik: <input type="number" min="0" x-model.number="p.fisik" class="w-20 border rounded-lg px-2 py-1 text-right text-sm"></label>
+            </div>
+            <div class="flex justify-end gap-3 text-xs">
+              <button @click="editProduct(p)" class="text-indigo-600 font-semibold">Edit</button>
+              <button @click="deleteProduct(p.id)" class="text-rose-600 font-semibold">Hapus</button>
+            </div>
+          </div>
+        </template>
+      </div>
       <div x-show="!filteredProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada produk untuk diopname.</div>
     </div>
 
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-      <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3"><div><h2 class="font-bold text-lg">📜 Riwayat Stock Opname</h2><p class="text-xs text-slate-500 mt-1">Arsip tersimpan di browser (localStorage), dapat diekspor ke Excel.</p></div><button @click="exportHistory()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Opname Excel</button></div>
-      <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between"><input x-model="historySearch" @input="historyPage=1" placeholder="Cari kode opname, tanggal, status..." class="w-full sm:max-w-md px-3 py-2.5 border rounded-xl text-sm"><div class="flex items-center gap-2 text-sm"><span class="text-slate-500">Baris:</span><select x-model.number="historyPageSize" @change="historyPage=1" class="border rounded-lg px-2 py-2"><option :value="5">5</option><option :value="10">10</option><option :value="20">20</option><option :value="50">50</option></select><span class="text-slate-500" x-text="historyFiltered.length+' hasil'"></span></div></div>
-      <div class="divide-y"><template x-for="h in pagedHistory" :key="h.id"><div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div class="flex flex-wrap items-center gap-2"><b class="font-mono text-indigo-600" x-text="h.kode"></b><span class="text-sm font-semibold" x-text="h.waktu"></span></div><p class="text-xs text-slate-500 mt-1"><span x-text="h.totalProduk+' produk'"></span> · Sesuai <b class="text-emerald-600" x-text="h.sesuai"></b> · Selisih <b class="text-rose-600" x-text="h.selisih"></b></p></div><div class="flex gap-2"><button @click="selectedHistory=h" class="border px-3 py-2 rounded-lg text-xs">Detail</button><button @click="deleteHistory(h.id)" class="border border-rose-200 text-rose-600 px-3 py-2 rounded-lg text-xs">Hapus</button></div></div></template></div>
+      <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3"><div><h2 class="font-bold text-base sm:text-lg">📜 Riwayat Stock Opname</h2><p class="text-xs text-slate-500 mt-1">Arsip tersimpan di browser (localStorage), dapat diekspor ke Excel.</p></div><button @click="exportHistory()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold">⬇ Export Opname Excel</button></div>
+      <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between"><input x-model="historySearch" @input="historyPage=1" placeholder="Cari kode opname, tanggal, status..." class="w-full sm:max-w-md px-3 py-2 border rounded-xl text-sm"><div class="flex items-center gap-2 text-xs sm:text-sm"><span class="text-slate-500">Baris:</span><select x-model.number="historyPageSize" @change="historyPage=1" class="border rounded-lg px-2 py-1.5"><option :value="5">5</option><option :value="10">10</option><option :value="20">20</option><option :value="50">50</option></select><span class="text-slate-500" x-text="historyFiltered.length+' hasil'"></span></div></div>
+      <div class="divide-y"><template x-for="h in pagedHistory" :key="h.id"><div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div class="flex flex-wrap items-center gap-2"><b class="font-mono text-indigo-600 text-xs sm:text-sm" x-text="h.kode"></b><span class="text-xs sm:text-sm font-semibold" x-text="h.waktu"></span></div><p class="text-xs text-slate-500 mt-1"><span x-text="h.totalProduk+' produk'"></span> · Sesuai <b class="text-emerald-600" x-text="h.sesuai"></b> · Selisih <b class="text-rose-600" x-text="h.selisih"></b></p></div><div class="flex gap-2"><button @click="selectedHistory=h" class="flex-1 sm:flex-initial border px-3 py-2 rounded-lg text-xs font-semibold">Detail</button><button @click="deleteHistory(h.id)" class="flex-1 sm:flex-initial border border-rose-200 text-rose-600 px-3 py-2 rounded-lg text-xs font-semibold">Hapus</button></div></div></template></div>
       <div x-show="!historyFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada riwayat stock opname.</div>
-      <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center"><p class="text-xs text-slate-500" x-text="pageInfo(historyPage,historyPageSize,historyFiltered.length)"></p><div class="flex gap-2"><button @click="historyPage=Math.max(1,historyPage-1)" :disabled="historyPage<=1" class="border px-3 py-2 rounded-lg text-sm">Sebelumnya</button><span class="px-3 py-2 text-sm" x-text="historyPage+' / '+historyTotalPages"></span><button @click="historyPage=Math.min(historyTotalPages,historyPage+1)" :disabled="historyPage>=historyTotalPages" class="border px-3 py-2 rounded-lg text-sm">Berikutnya</button></div></div>
+      <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center"><p class="text-xs text-slate-500" x-text="pageInfo(historyPage,historyPageSize,historyFiltered.length)"></p><div class="flex gap-2"><button @click="historyPage=Math.max(1,historyPage-1)" :disabled="historyPage<=1" class="border px-3 py-1.5 rounded-lg text-xs sm:text-sm">Sebelumnya</button><span class="px-3 py-1.5 text-xs sm:text-sm" x-text="historyPage+' / '+historyTotalPages"></span><button @click="historyPage=Math.min(historyTotalPages,historyPage+1)" :disabled="historyPage>=historyTotalPages" class="border px-3 py-1.5 rounded-lg text-xs sm:text-sm">Berikutnya</button></div></div>
     </div>
   </section>
+</div>
+
+<!-- Modal Format Upload Excel -->
+<div x-show="showFormatGuide" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-3" @keydown.escape.window="showFormatGuide=false">
+ <div @click.outside="showFormatGuide=false" class="bg-white rounded-2xl p-5 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl space-y-4">
+  <div class="flex justify-between items-start">
+   <div>
+    <h3 class="font-bold text-lg">📄 Panduan Format Upload Excel (.xlsx / .csv)</h3>
+    <p class="text-xs text-slate-500 mt-1">Gunakan nama kolom sesuai format di bawah agar data terbaca otomatis.</p>
+   </div>
+   <button @click="showFormatGuide=false" class="text-2xl leading-none">×</button>
+  </div>
+
+  <div class="border rounded-xl p-3.5 bg-slate-50 space-y-2">
+   <div class="flex flex-wrap justify-between items-center gap-2">
+    <b class="text-sm text-indigo-700">1. Format Import Produk & Stok</b>
+    <button @click="downloadProductTemplate()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">⬇ Download Template Produk</button>
+   </div>
+   <p class="text-xs text-slate-600">Kolom: <code class="bg-white px-1.5 py-0.5 border rounded">sku</code>, <code class="bg-white px-1.5 py-0.5 border rounded">nama</code>, <code class="bg-white px-1.5 py-0.5 border rounded">stok_gudang</code>, <code class="bg-white px-1.5 py-0.5 border rounded">stok_fisik</code>, <code class="bg-white px-1.5 py-0.5 border rounded">stok_customer</code>, <code class="bg-white px-1.5 py-0.5 border rounded">min_stok</code>, <code class="bg-white px-1.5 py-0.5 border rounded">permintaan_30_hari</code></p>
+   <div class="overflow-x-auto bg-white border rounded-lg">
+    <table class="text-xs w-full text-left" style="min-width:520px">
+     <thead class="bg-slate-100"><tr><th class="p-2">sku</th><th class="p-2">nama</th><th class="p-2">stok_gudang</th><th class="p-2">stok_fisik</th><th class="p-2">stok_customer</th><th class="p-2">min_stok</th><th class="p-2">permintaan_30_hari</th></tr></thead>
+     <tbody><tr><td class="p-2 font-mono">PC-001</td><td class="p-2">Facial Wash 100ml</td><td class="p-2">120</td><td class="p-2">120</td><td class="p-2">15</td><td class="p-2">30</td><td class="p-2">180</td></tr></tbody>
+    </table>
+   </div>
+  </div>
+
+  <div class="border rounded-xl p-3.5 bg-slate-50 space-y-2">
+   <div class="flex flex-wrap justify-between items-center gap-2">
+    <b class="text-sm text-emerald-700">2. Format Import Serial Number</b>
+    <button @click="downloadSerialTemplate()" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">⬇ Download Template Serial</button>
+   </div>
+   <p class="text-xs text-slate-600">Kolom: <code class="bg-white px-1.5 py-0.5 border rounded">serial_number</code>, <code class="bg-white px-1.5 py-0.5 border rounded">sku</code>, <code class="bg-white px-1.5 py-0.5 border rounded">lokasi</code> (Gudang / Customer / Keluar/Terjual), <code class="bg-white px-1.5 py-0.5 border rounded">customer</code></p>
+   <div class="overflow-x-auto bg-white border rounded-lg">
+    <table class="text-xs w-full text-left" style="min-width:420px">
+     <thead class="bg-slate-100"><tr><th class="p-2">serial_number</th><th class="p-2">sku</th><th class="p-2">lokasi</th><th class="p-2">customer</th></tr></thead>
+     <tbody><tr><td class="p-2 font-mono">SN-2026-0001</td><td class="p-2 font-mono">PC-001</td><td class="p-2">Customer</td><td class="p-2">Toko Berkah</td></tr></tbody>
+    </table>
+   </div>
+  </div>
+ </div>
 </div>
 
 <!-- Modal Produk -->
@@ -447,7 +632,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
      <template x-for="p in products" :key="p.id"><option :value="p.id" x-text="p.sku+' - '+p.nama+' (Gudang: '+p.sistem+' pcs)'"></option></template>
     </select>
    </label>
-   <div class="grid grid-cols-2 gap-3">
+   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <label class="text-xs font-semibold">Jumlah (pcs)<input required min="1" type="number" x-model.number="movementForm.qty" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
     <template x-if="movementForm.tipe==='OUT'">
      <label class="text-xs font-semibold">Tujuan Keluar
@@ -561,7 +746,7 @@ function warehouseApp(){
  return {
   activeTab:'demand',
   search:'',orderSearch:'',historySearch:'',movementSearch:'',movementTypeFilter:'ALL',serialSearch:'',serialLocationFilter:'ALL',
-  showProductModal:false,showOrderModal:false,showMovementModal:false,showReturnModal:false,showSerialModal:false,
+  showProductModal:false,showOrderModal:false,showMovementModal:false,showReturnModal:false,showSerialModal:false,showFormatGuide:false,
   isEdit:false,selectedHistory:null,selectedSerial:null,
   products:read('warehouse_products',[]).map(p=>({...p,stokCustomer:Number(p.stokCustomer||0)})),
   orders:read('warehouse_orders',[]),
@@ -596,7 +781,6 @@ function warehouseApp(){
   get demandProducts(){return [...this.filteredProducts].sort((a,b)=>b.permintaan30Hari-a.permintaan30Hari);},
   get orderFiltered(){return this.orders.filter(o=>this.fuzzyMatch(this.orderSearch,[o.kode,o.namaProduk,o.supplier,o.status,o.tanggal]));},
   get historyFiltered(){return this.history.filter(h=>this.fuzzyMatch(this.historySearch,[h.kode,h.waktu,String(h.totalProduk),String(h.sesuai),String(h.selisih)]));},
-
   get movementFiltered(){
    return this.movements.filter(m=>{
     if(this.movementTypeFilter!=='ALL'&&m.tipe!==this.movementTypeFilter)return false;
@@ -667,9 +851,7 @@ function warehouseApp(){
    });
   },
 
-  parseSerials(text){
-   return Array.from(new Set(String(text||'').split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean)));
-  },
+  parseSerials(text){return Array.from(new Set(String(text||'').split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean)));},
   upsertSerialLog(sn,product,lokasi,customer,aksi,detail){
    const now=new Date().toLocaleString('id-ID');
    let item=this.serials.find(x=>x.sn.toLowerCase()===sn.toLowerCase());
@@ -712,11 +894,10 @@ function warehouseApp(){
    if(qty<=0)return;
    const serialList=this.parseSerials(this.movementForm.serialsText);
    const now=new Date().toLocaleString('id-ID');
-
    if(this.movementForm.tipe==='IN'){
     p.sistem=Number(p.sistem)+qty;
     p.fisik=Number(p.fisik)+qty;
-    serialList.forEach(sn=>this.upsertSerialLog(sn,p,'Gudang','', 'Barang Masuk', `Masuk ${qty} pcs ke Gudang. ${this.movementForm.catatan||''}`));
+    serialList.forEach(sn=>this.upsertSerialLog(sn,p,'Gudang','','Barang Masuk',`Masuk ${qty} pcs ke Gudang. ${this.movementForm.catatan||''}`));
     this.movements.unshift({id:Date.now(),waktu:now,tipe:'IN',productId:p.id,sku:p.sku,namaProduk:p.nama,qty,customer:'',serials:serialList,catatan:this.movementForm.catatan});
    }else{
     if(Number(p.sistem)<qty){alert('Stok gudang tidak mencukupi.');return;}
@@ -730,7 +911,7 @@ function warehouseApp(){
    }
    this.showMovementModal=false;this.activeTab='movements';this.movementPage=1;this.persist();
   },
-  deleteMovement(id){if(!confirm('Hapus catatan mutasi ini? (Tidak mengubah stok yang sudah tercatat)'))return;this.movements=this.movements.filter(m=>m.id!==id);this.persist();},
+  deleteMovement(id){if(!confirm('Hapus catatan mutasi ini?'))return;this.movements=this.movements.filter(m=>m.id!==id);this.persist();},
 
   openReturnModal(productId=null){
    if(!this.products.length){alert('Tambahkan produk terlebih dahulu.');return;}
@@ -792,6 +973,95 @@ function warehouseApp(){
    this.historyPage=1;
   },
   deleteHistory(id){if(!confirm('Hapus riwayat opname ini?'))return;this.history=this.history.filter(h=>h.id!==id);this.persist();},
+
+  // Excel Template & Upload
+  downloadProductTemplate(){
+   if(!this.checkXlsx())return;
+   const sample=[
+    {sku:'PC-001',nama:'Facial Wash 100ml',stok_gudang:120,stok_fisik:120,stok_customer:15,min_stok:30,permintaan_30_hari:180},
+    {sku:'PC-002',nama:'Body Lotion 250ml',stok_gudang:85,stok_fisik:85,stok_customer:10,min_stok:25,permintaan_30_hari:110}
+   ];
+   const ws=XLSX.utils.json_to_sheet(sample);
+   const wb=XLSX.utils.book_new();
+   XLSX.utils.book_append_sheet(wb,ws,'Template Produk');
+   XLSX.writeFile(wb,'Template_Upload_Produk.xlsx');
+  },
+  downloadSerialTemplate(){
+   if(!this.checkXlsx())return;
+   const sample=[
+    {serial_number:'SN-PC-001-01',sku:'PC-001',lokasi:'Gudang',customer:''},
+    {serial_number:'SN-PC-001-02',sku:'PC-001',lokasi:'Customer',customer:'Toko Berkah'}
+   ];
+   const ws=XLSX.utils.json_to_sheet(sample);
+   const wb=XLSX.utils.book_new();
+   XLSX.utils.book_append_sheet(wb,ws,'Template Serial');
+   XLSX.writeFile(wb,'Template_Upload_Serial_Number.xlsx');
+  },
+  readExcelRows(file,cb){
+   if(!file)return;
+   if(!this.checkXlsx())return;
+   const reader=new FileReader();
+   reader.onload=(e)=>{
+    try{
+     const data=new Uint8Array(e.target.result);
+     const wb=XLSX.read(data,{type:'array'});
+     const firstSheet=wb.SheetNames[0];
+     const rows=XLSX.utils.sheet_to_json(wb.Sheets[firstSheet],{defval:''});
+     cb(rows);
+    }catch(err){alert('Gagal membaca file Excel: '+err.message);}
+   };
+   reader.readAsArrayBuffer(file);
+  },
+  handleProductExcelUpload(event){
+   const file=event.target.files[0];
+   event.target.value='';
+   this.readExcelRows(file,(rows)=>{
+    let added=0,updated=0;
+    rows.forEach((r,idx)=>{
+     const sku=String(r.sku||r.SKU||r.kode||'').trim();
+     const nama=String(r.nama||r.Nama||r.produk||r.nama_produk||'').trim();
+     if(!sku||!nama)return;
+     const sistem=Number(r.stok_gudang??r.sistem??r.stok??0)||0;
+     const fisik=Number(r.stok_fisik??r.fisik??sistem)||0;
+     const stokCustomer=Number(r.stok_customer??r.customer_stok??0)||0;
+     const minStok=Number(r.min_stok??r.minStok??0)||0;
+     const permintaan30Hari=Number(r.permintaan_30_hari??r.permintaan30Hari??r.permintaan??0)||0;
+
+     const existing=this.products.find(p=>p.sku.toLowerCase()===sku.toLowerCase());
+     if(existing){
+      existing.nama=nama;existing.sistem=sistem;existing.fisik=fisik;
+      existing.stokCustomer=stokCustomer;existing.minStok=minStok;existing.permintaan30Hari=permintaan30Hari;
+      updated++;
+     }else{
+      this.products.push({id:Date.now()+idx,sku,nama,sistem,fisik,stokCustomer,minStok,permintaan30Hari});
+      added++;
+     }
+    });
+    this.persist();
+    alert(`Import produk selesai: ${added} baru, ${updated} diperbarui.`);
+   });
+  },
+  handleSerialExcelUpload(event){
+   const file=event.target.files[0];
+   event.target.value='';
+   this.readExcelRows(file,(rows)=>{
+    let count=0;
+    rows.forEach((r)=>{
+     const sn=String(r.serial_number||r.sn||r.serial||r.nomor_seri||'').trim();
+     const sku=String(r.sku||r.SKU||'').trim();
+     if(!sn||!sku)return;
+     const prod=this.products.find(p=>p.sku.toLowerCase()===sku.toLowerCase())||{id:null,sku,nama:sku};
+     const rawLoc=String(r.lokasi||r.Lokasi||'Gudang').trim();
+     const lokasi=['Gudang','Customer','Keluar/Terjual'].includes(rawLoc)?rawLoc:'Gudang';
+     const customer=String(r.customer||r.Customer||'').trim();
+     this.upsertSerialLog(sn,prod,lokasi,customer,'Import Excel',`Lokasi: ${lokasi}${customer?' ('+customer+')':''}`);
+     count++;
+    });
+    this.persist();
+    this.activeTab='serials';
+    alert(`Import serial number selesai: ${count} serial diproses.`);
+   });
+  },
 
   checkXlsx(){if(!window.XLSX){alert('Library Excel belum termuat. Periksa koneksi internet.');return false;}return true;},
   exportInventoryReport(){
