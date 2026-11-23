@@ -12,93 +12,404 @@
 [x-cloak]{display:none!important}
 body{background:#f8fafc}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{min-width:760px}
+table{min-width:780px}
 .mobile-card{display:none}
 @media(max-width:640px){
   .desktop-table{display:none}
   .mobile-card{display:block}
   .mobile-card table{min-width:0}
-  .mobile-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
 }
 button:disabled{opacity:.4;cursor:not-allowed}
 </style>
 </head>
 <body class="text-slate-800 font-sans" x-data="warehouseApp()" x-init="init()" x-cloak>
 <div class="max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
+  <!-- Header -->
   <header class="flex flex-col xl:flex-row justify-between gap-4 mb-5 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
     <div>
-      <span class="bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Sistem Manajemen Gudang</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Sistem Manajemen Gudang</span>
+        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Real-Time Sync
+        </span>
+      </div>
       <h1 class="text-2xl font-bold text-slate-900 mt-2">Gudang Personal Care</h1>
-      <p class="text-sm text-slate-500 mt-1">Permintaan barang, order pembelian, stok, dan stock opname.</p>
+      <p class="text-sm text-slate-500 mt-1">Permintaan barang, mutasi masuk/keluar, serial number, stok gudang & customer, PO, serta stock opname.</p>
     </div>
-    <div class="flex flex-wrap gap-2 bg-slate-100 p-1.5 rounded-xl">
-      <button @click="activeTab='demand'" :class="tabClass('demand')" class="flex-1 px-3 py-2 rounded-lg text-sm font-semibold">🔥 Permintaan</button>
-      <button @click="activeTab='order_stock'" :class="tabClass('order_stock')" class="flex-1 px-3 py-2 rounded-lg text-sm font-semibold">🛒 Order & Stok</button>
-      <button @click="activeTab='opname'" :class="tabClass('opname')" class="flex-1 px-3 py-2 rounded-lg text-sm font-semibold">📋 Opname</button>
+    <div class="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-xl self-start xl:self-center">
+      <button @click="activeTab='demand'" :class="tabClass('demand')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🔥 Permintaan</button>
+      <button @click="activeTab='movements'" :class="tabClass('movements')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🔄 Masuk/Keluar</button>
+      <button @click="activeTab='locations'" :class="tabClass('locations')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏢 Gudang & Customer</button>
+      <button @click="activeTab='serials'" :class="tabClass('serials')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏷️ Serial Number</button>
+      <button @click="activeTab='order_stock'" :class="tabClass('order_stock')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🛒 PO & Stok</button>
+      <button @click="activeTab='opname'" :class="tabClass('opname')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">📋 Opname & Laporan</button>
     </div>
   </header>
 
-  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-    <div class="bg-white p-4 rounded-2xl border shadow-sm"><p class="text-xs text-slate-400 font-semibold uppercase">Total SKU</p><p class="text-2xl font-bold mt-1" x-text="products.length"></p></div>
-    <div class="bg-white p-4 rounded-2xl border shadow-sm"><p class="text-xs text-slate-400 font-semibold uppercase">Fast Moving</p><p class="text-2xl font-bold text-amber-600 mt-1" x-text="fastMovingProducts.length"></p></div>
-    <div class="bg-white p-4 rounded-2xl border shadow-sm"><p class="text-xs text-slate-400 font-semibold uppercase">PO Aktif</p><p class="text-2xl font-bold text-indigo-600 mt-1" x-text="orders.filter(o=>o.status!=='Diterima').length"></p></div>
-    <div class="bg-white p-4 rounded-2xl border shadow-sm"><p class="text-xs text-slate-400 font-semibold uppercase">Selisih Opname</p><p class="text-2xl font-bold text-rose-600 mt-1" x-text="products.filter(p=>Number(p.fisik)!==Number(p.sistem)).length"></p></div>
+  <!-- Real-Time Summary Cards -->
+  <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+    <div class="bg-white p-4 rounded-2xl border shadow-sm">
+      <p class="text-xs text-slate-400 font-semibold uppercase">Total SKU</p>
+      <p class="text-2xl font-bold mt-1" x-text="products.length"></p>
+      <p class="text-[11px] text-slate-400 mt-1" x-text="'Fast moving: '+fastMovingProducts.length+' SKU'"></p>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border shadow-sm">
+      <p class="text-xs text-slate-400 font-semibold uppercase">Stok Gudang</p>
+      <p class="text-2xl font-bold text-indigo-600 mt-1" x-text="totalWarehouseStock+' pcs'"></p>
+      <p class="text-[11px] text-slate-400 mt-1" x-text="'Low stock: '+lowStockProducts.length+' SKU'"></p>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border shadow-sm">
+      <p class="text-xs text-slate-400 font-semibold uppercase">Stok Customer</p>
+      <p class="text-2xl font-bold text-amber-600 mt-1" x-text="totalCustomerStock+' pcs'"></p>
+      <p class="text-[11px] text-slate-400 mt-1" x-text="'Total aset: '+(totalWarehouseStock+totalCustomerStock)+' pcs'"></p>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border shadow-sm">
+      <p class="text-xs text-slate-400 font-semibold uppercase">Serial Terlacak</p>
+      <p class="text-2xl font-bold text-emerald-600 mt-1" x-text="serials.length"></p>
+      <p class="text-[11px] text-slate-400 mt-1" x-text="serials.filter(s=>s.lokasi==='Gudang').length+' di gudang · '+serials.filter(s=>s.lokasi==='Customer').length+' di customer'"></p>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border shadow-sm col-span-2 lg:col-span-1">
+      <p class="text-xs text-slate-400 font-semibold uppercase">Selisih Opname</p>
+      <p class="text-2xl font-bold text-rose-600 mt-1" x-text="products.filter(p=>Number(p.fisik)!==Number(p.sistem)).length"></p>
+      <p class="text-[11px] text-slate-400 mt-1" x-text="'PO aktif: '+orders.filter(o=>o.status!=='Diterima').length"></p>
+    </div>
   </section>
 
-  <div class="bg-white p-3 sm:p-4 rounded-2xl border shadow-sm mb-5 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-    <input x-model="search" type="search" placeholder="Cari SKU atau nama produk..." class="w-full sm:max-w-sm px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-indigo-500">
-    <div class="grid grid-cols-2 sm:flex gap-2">
+  <!-- Global Search & Quick Actions -->
+  <div class="bg-white p-3 sm:p-4 rounded-2xl border shadow-sm mb-5 flex flex-col lg:flex-row gap-2.5 lg:items-center lg:justify-between">
+    <input x-model="search" type="search" placeholder="Cari SKU, nama produk, atau customer..." class="w-full lg:max-w-md px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+    <div class="grid grid-cols-2 sm:flex flex-wrap gap-2">
       <button @click="openProductModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold">+ Produk</button>
+      <button @click="openMovementModal('IN')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold">↓ Barang Masuk</button>
+      <button @click="openMovementModal('OUT')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold">↑ Barang Keluar</button>
       <button @click="openOrderModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-2.5 rounded-xl text-sm font-semibold">+ Buat PO</button>
       <button @click="clearStorage()" class="col-span-2 sm:col-span-1 border border-rose-200 text-rose-600 hover:bg-rose-50 px-3 py-2.5 rounded-xl text-sm font-semibold">Clear Storage</button>
     </div>
   </div>
 
-  <!-- PERMINTAAN -->
+  <!-- 1. PERMINTAAN -->
   <section x-show="activeTab==='demand'" class="space-y-5">
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-      <div class="p-4 sm:p-5 border-b"><h2 class="font-bold text-lg">🔥 Permintaan Barang & Barang Laku</h2><p class="text-xs text-slate-500 mt-1">Diurutkan berdasarkan permintaan 30 hari terakhir. Fast moving ≥ 150 pcs.</p></div>
-      <div class="table-wrap desktop-table"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Permintaan 30 Hari</th><th class="p-4">Rata-rata/Hari</th><th class="p-4">Stok</th><th class="p-4">Sisa Hari</th><th class="p-4">Kategori</th><th class="p-4">Aksi</th></tr></thead>
-      <tbody class="divide-y"><template x-for="p in demandProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4" x-text="p.permintaan30Hari+' pcs'"></td><td class="p-4" x-text="dailyDemand(p).toFixed(1)"></td><td class="p-4" x-text="p.sistem+' pcs'"></td><td class="p-4" x-text="daysOfCover(p)+' hari'"></td><td class="p-4" x-text="p.permintaan30Hari>=150?'Fast Moving':'Regular'"></td><td class="p-4"><button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg text-xs font-semibold">+ Order</button></td></tr></template></tbody></table></div>
-      <div class="mobile-card p-3 space-y-3"><template x-for="p in demandProducts" :key="p.id"><div class="border rounded-xl p-3"><div class="flex justify-between gap-2"><b x-text="p.nama"></b><span class="text-xs text-amber-700" x-text="p.permintaan30Hari>=150?'Fast Moving':'Regular'"></span></div><p class="text-xs text-slate-500 mt-1" x-text="p.sku"></p><div class="grid grid-cols-2 gap-2 text-sm mt-3"><span>Permintaan: <b x-text="p.permintaan30Hari"></b></span><span>Stok: <b x-text="p.sistem"></b></span><span>Rata-rata: <b x-text="dailyDemand(p).toFixed(1)+'/hari'"></b></span><span>Sisa: <b x-text="daysOfCover(p)+' hari'"></b></span></div><button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="mt-3 w-full bg-indigo-50 text-indigo-700 rounded-lg py-2 text-sm font-semibold">+ Buat PO</button></div></template></div>
+      <div class="p-4 sm:p-5 border-b">
+        <h2 class="font-bold text-lg">🔥 Permintaan Barang & Barang Laku</h2>
+        <p class="text-xs text-slate-500 mt-1">Diurutkan berdasarkan permintaan 30 hari terakhir. Fast moving ≥ 150 pcs. Stok sistem dihitung dari stok gudang + stok di customer.</p>
+      </div>
+      <div class="table-wrap desktop-table">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-400">
+            <tr>
+              <th class="p-4">SKU</th>
+              <th class="p-4">Produk</th>
+              <th class="p-4">Permintaan 30 Hari</th>
+              <th class="p-4">Rata-rata/Hari</th>
+              <th class="p-4">Gudang</th>
+              <th class="p-4">Customer</th>
+              <th class="p-4">Total Sistem</th>
+              <th class="p-4">Sisa Hari</th>
+              <th class="p-4">Kategori</th>
+              <th class="p-4">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <template x-for="p in demandProducts" :key="p.id">
+              <tr>
+                <td class="p-4 font-mono text-xs" x-text="p.sku"></td>
+                <td class="p-4 font-semibold" x-text="p.nama"></td>
+                <td class="p-4" x-text="p.permintaan30Hari+' pcs'"></td>
+                <td class="p-4" x-text="dailyDemand(p).toFixed(1)"></td>
+                <td class="p-4 font-semibold text-indigo-600" x-text="p.sistem+' pcs'"></td>
+                <td class="p-4 font-semibold text-amber-600" x-text="(p.stokCustomer||0)+' pcs'"></td>
+                <td class="p-4 font-bold" x-text="totalProductStock(p)+' pcs'"></td>
+                <td class="p-4" x-text="daysOfCover(p)+' hari'"></td>
+                <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="p.permintaan30Hari>=150?'bg-amber-50 text-amber-700':'bg-slate-100 text-slate-600'" x-text="p.permintaan30Hari>=150?'Fast Moving':'Regular'"></span></td>
+                <td class="p-4"><button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-2 rounded-lg text-xs font-semibold">+ Order</button></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div class="mobile-card p-3 space-y-3">
+        <template x-for="p in demandProducts" :key="p.id">
+          <div class="border rounded-xl p-3">
+            <div class="flex justify-between gap-2"><b x-text="p.nama"></b><span class="text-xs text-amber-700 font-semibold" x-text="p.permintaan30Hari>=150?'Fast Moving':'Regular'"></span></div>
+            <p class="text-xs text-slate-500 mt-1" x-text="p.sku"></p>
+            <div class="grid grid-cols-2 gap-2 text-sm mt-3">
+              <span>Permintaan: <b x-text="p.permintaan30Hari"></b></span>
+              <span>Gudang: <b x-text="p.sistem"></b></span>
+              <span>Customer: <b x-text="p.stokCustomer||0"></b></span>
+              <span>Sisa: <b x-text="daysOfCover(p)+' hari'"></b></span>
+            </div>
+            <button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="mt-3 w-full bg-indigo-50 text-indigo-700 rounded-lg py-2 text-sm font-semibold">+ Buat PO</button>
+          </div>
+        </template>
+      </div>
       <div x-show="!demandProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data produk. Klik <b>+ Produk</b> untuk menambahkan data.</div>
     </div>
   </section>
 
-  <!-- ORDER & STOCK -->
+  <!-- 2. BARANG MASUK & KELUAR -->
+  <section x-show="activeTab==='movements'" class="space-y-5">
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+      <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-lg">🔄 Pencatatan Barang Masuk & Keluar</h2>
+          <p class="text-xs text-slate-500 mt-1">Barang masuk menambah stok gudang; barang keluar dapat dikirim ke customer atau keluar umum, serta mendukung pencatatan serial number.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button @click="openMovementModal('IN')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">↓ Catat Masuk</button>
+          <button @click="openMovementModal('OUT')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">↑ Catat Keluar</button>
+          <button @click="exportMovements()" class="border border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Mutasi</button>
+        </div>
+      </div>
+
+      <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
+        <div class="flex flex-wrap gap-2 items-center">
+          <input x-model="movementSearch" @input="movementPage=1" placeholder="Cari produk, SKU, customer, serial, keterangan..." class="w-full sm:w-72 px-3 py-2.5 border rounded-xl text-sm">
+          <select x-model="movementTypeFilter" @change="movementPage=1" class="border rounded-xl px-3 py-2.5 text-sm">
+            <option value="ALL">Semua Mutasi</option>
+            <option value="IN">Barang Masuk</option>
+            <option value="OUT">Barang Keluar</option>
+          </select>
+        </div>
+        <span class="text-xs text-slate-500" x-text="movementFiltered.length+' transaksi'"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-400">
+            <tr>
+              <th class="p-4">Waktu</th>
+              <th class="p-4">Jenis</th>
+              <th class="p-4">SKU & Produk</th>
+              <th class="p-4">Qty</th>
+              <th class="p-4">Tujuan / Customer</th>
+              <th class="p-4">Serial Number</th>
+              <th class="p-4">Catatan</th>
+              <th class="p-4">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <template x-for="m in pagedMovements" :key="m.id">
+              <tr>
+                <td class="p-4 text-xs text-slate-500 whitespace-nowrap" x-text="m.waktu"></td>
+                <td class="p-4">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="m.tipe==='IN'?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'" x-text="m.tipe==='IN'?'Masuk':'Keluar'"></span>
+                </td>
+                <td class="p-4"><b x-text="m.namaProduk"></b><div class="text-xs font-mono text-slate-400" x-text="m.sku"></div></td>
+                <td class="p-4 font-bold" :class="m.tipe==='IN'?'text-emerald-600':'text-amber-600'" x-text="(m.tipe==='IN'?'+':'-')+m.qty+' pcs'"></td>
+                <td class="p-4" x-text="m.customer || (m.tipe==='IN'?'Gudang Utama':'Keluar Umum')"></td>
+                <td class="p-4 font-mono text-xs max-w-[200px] truncate" :title="(m.serials||[]).join(', ')" x-text="(m.serials&&m.serials.length)?m.serials.join(', '):'-'"></td>
+                <td class="p-4 text-xs text-slate-600" x-text="m.catatan||'-'"></td>
+                <td class="p-4"><button @click="deleteMovement(m.id)" class="text-rose-600 hover:underline text-xs font-semibold">Hapus</button></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="!movementFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada catatan barang masuk atau keluar.</div>
+      <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
+        <p class="text-xs text-slate-500" x-text="pageInfo(movementPage,movementPageSize,movementFiltered.length)"></p>
+        <div class="flex gap-2">
+          <button @click="movementPage=Math.max(1,movementPage-1)" :disabled="movementPage<=1" class="border px-3 py-2 rounded-lg text-sm">Sebelumnya</button>
+          <span class="px-3 py-2 text-sm" x-text="movementPage+' / '+movementTotalPages"></span>
+          <button @click="movementPage=Math.min(movementTotalPages,movementPage+1)" :disabled="movementPage>=movementTotalPages" class="border px-3 py-2 rounded-lg text-sm">Berikutnya</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. STOK DI GUDANG MAUPUN DI CUSTOMER -->
+  <section x-show="activeTab==='locations'" class="space-y-5">
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+      <div class="p-4 sm:p-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-lg">🏢 Monitoring Stok di Gudang & di Customer</h2>
+          <p class="text-xs text-slate-500 mt-1">Pantau posisi stok fisik/sistem di gudang dan unit yang sedang berada di customer, serta lakukan retur atau transfer.</p>
+        </div>
+        <button @click="openReturnModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">↩ Retur Customer ke Gudang</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-400">
+            <tr>
+              <th class="p-4">SKU</th>
+              <th class="p-4">Produk</th>
+              <th class="p-4">Stok Gudang</th>
+              <th class="p-4">Stok di Customer</th>
+              <th class="p-4">Total Stok</th>
+              <th class="p-4">Porsi Customer</th>
+              <th class="p-4">Aksi Cepat</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <template x-for="p in filteredProducts" :key="p.id">
+              <tr>
+                <td class="p-4 font-mono text-xs" x-text="p.sku"></td>
+                <td class="p-4 font-semibold" x-text="p.nama"></td>
+                <td class="p-4 font-bold text-indigo-600" x-text="p.sistem+' pcs'"></td>
+                <td class="p-4 font-bold text-amber-600" x-text="(p.stokCustomer||0)+' pcs'"></td>
+                <td class="p-4 font-bold" x-text="totalProductStock(p)+' pcs'"></td>
+                <td class="p-4 text-xs" x-text="totalProductStock(p)>0?Math.round(((p.stokCustomer||0)/totalProductStock(p))*100)+'% di customer':'0%'"></td>
+                <td class="p-4 flex gap-2">
+                  <button @click="openMovementModal('OUT',p.id)" class="bg-amber-50 text-amber-700 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg text-xs font-semibold">Kirim ke Customer</button>
+                  <button @click="openReturnModal(p.id)" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg text-xs font-semibold">Retur Masuk</button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="!filteredProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data produk.</div>
+    </div>
+
+    <!-- Rincian Stok per Customer -->
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+      <div class="p-4 sm:p-5 border-b">
+        <h3 class="font-bold text-base">👥 Rincian Barang di Tangan Customer</h3>
+        <p class="text-xs text-slate-500 mt-1">Rekap unit aktif yang tercatat berada pada masing-masing customer.</p>
+      </div>
+      <div class="table-wrap">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-400">
+            <tr>
+              <th class="p-4">Customer</th>
+              <th class="p-4">SKU</th>
+              <th class="p-4">Produk</th>
+              <th class="p-4">Qty di Customer</th>
+              <th class="p-4">Serial Number Aktif</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <template x-for="row in customerHoldings" :key="row.key">
+              <tr>
+                <td class="p-4 font-semibold text-slate-900" x-text="row.customer"></td>
+                <td class="p-4 font-mono text-xs" x-text="row.sku"></td>
+                <td class="p-4" x-text="row.namaProduk"></td>
+                <td class="p-4 font-bold text-amber-600" x-text="row.qty+' pcs'"></td>
+                <td class="p-4 font-mono text-xs" x-text="row.serials.length?row.serials.join(', '):'-'"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="!customerHoldings.length" class="p-8 text-center text-slate-400 text-sm">Belum ada stok aktif yang tercatat di customer.</div>
+    </div>
+  </section>
+
+  <!-- 4. TRACKING SERIAL NUMBER -->
+  <section x-show="activeTab==='serials'" class="space-y-5">
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+      <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-lg">🏷️ Tracking Barang Berdasarkan Serial Number</h2>
+          <p class="text-xs text-slate-500 mt-1">Lacak posisi terkini, pemegang/customer, dan riwayat mutasi setiap serial number.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button @click="openSerialModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">+ Daftarkan Serial</button>
+          <button @click="exportSerials()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Serial</button>
+        </div>
+      </div>
+
+      <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
+        <div class="flex flex-wrap gap-2 items-center">
+          <input x-model="serialSearch" @input="serialPage=1" placeholder="Cari serial number, SKU, produk, atau customer..." class="w-full sm:w-80 px-3 py-2.5 border rounded-xl text-sm">
+          <select x-model="serialLocationFilter" @change="serialPage=1" class="border rounded-xl px-3 py-2.5 text-sm">
+            <option value="ALL">Semua Lokasi</option>
+            <option value="Gudang">Gudang</option>
+            <option value="Customer">Customer</option>
+            <option value="Keluar/Terjual">Keluar/Terjual</option>
+          </select>
+        </div>
+        <span class="text-xs text-slate-500" x-text="serialFiltered.length+' serial'"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-400">
+            <tr>
+              <th class="p-4">Serial Number</th>
+              <th class="p-4">SKU & Produk</th>
+              <th class="p-4">Lokasi Saat Ini</th>
+              <th class="p-4">Customer / Keterangan</th>
+              <th class="p-4">Update Terakhir</th>
+              <th class="p-4">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <template x-for="s in pagedSerials" :key="s.sn">
+              <tr>
+                <td class="p-4 font-mono font-bold text-indigo-600" x-text="s.sn"></td>
+                <td class="p-4"><b x-text="s.namaProduk"></b><div class="text-xs font-mono text-slate-400" x-text="s.sku"></div></td>
+                <td class="p-4">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="s.lokasi==='Gudang'?'bg-emerald-50 text-emerald-700':(s.lokasi==='Customer'?'bg-amber-50 text-amber-700':'bg-slate-100 text-slate-600')" x-text="s.lokasi"></span>
+                </td>
+                <td class="p-4 text-xs" x-text="s.customer||'-'"></td>
+                <td class="p-4 text-xs text-slate-500" x-text="s.updatedAt"></td>
+                <td class="p-4 flex gap-2">
+                  <button @click="selectedSerial=s" class="border px-2.5 py-1.5 rounded-lg text-xs font-semibold">Riwayat</button>
+                  <button @click="deleteSerial(s.sn)" class="text-rose-600 hover:underline text-xs font-semibold">Hapus</button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="!serialFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data serial number. Daftarkan saat input serial atau saat mencatat barang masuk/keluar.</div>
+      <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
+        <p class="text-xs text-slate-500" x-text="pageInfo(serialPage,serialPageSize,serialFiltered.length)"></p>
+        <div class="flex gap-2">
+          <button @click="serialPage=Math.max(1,serialPage-1)" :disabled="serialPage<=1" class="border px-3 py-2 rounded-lg text-sm">Sebelumnya</button>
+          <span class="px-3 py-2 text-sm" x-text="serialPage+' / '+serialTotalPages"></span>
+          <button @click="serialPage=Math.min(serialTotalPages,serialPage+1)" :disabled="serialPage>=serialTotalPages" class="border px-3 py-2 rounded-lg text-sm">Berikutnya</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. ORDER & STOCK -->
   <section x-show="activeTab==='order_stock'" class="space-y-5">
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-      <div class="p-4 sm:p-5 border-b"><h2 class="font-bold text-lg">📦 Monitoring Stok & Reorder Point</h2><p class="text-xs text-slate-500 mt-1">Status stok berdasarkan minimum stok setiap produk.</p></div>
-      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Stok Sistem</th><th class="p-4">Min. Stok</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4" x-text="p.sistem+' pcs'"></td><td class="p-4" x-text="p.minStok+' pcs'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs" :class="p.sistem<=p.minStok?'bg-rose-50 text-rose-600':'bg-emerald-50 text-emerald-600'" x-text="p.sistem<=p.minStok?'Perlu Restock':'Aman'"></span></td><td class="p-4"><button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="bg-slate-900 text-white px-3 py-2 rounded-lg text-xs">Buat PO</button></td></tr></template></tbody></table></div>
+      <div class="p-4 sm:p-5 border-b"><h2 class="font-bold text-lg">📦 Monitoring Stok & Reorder Point</h2><p class="text-xs text-slate-500 mt-1">Status stok berdasarkan minimum stok gudang setiap produk.</p></div>
+      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Stok Gudang</th><th class="p-4">Stok Customer</th><th class="p-4">Min. Stok</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4 font-semibold" x-text="p.sistem+' pcs'"></td><td class="p-4 text-amber-600 font-semibold" x-text="(p.stokCustomer||0)+' pcs'"></td><td class="p-4" x-text="p.minStok+' pcs'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold" :class="p.sistem<=p.minStok?'bg-rose-50 text-rose-600':'bg-emerald-50 text-emerald-600'" x-text="p.sistem<=p.minStok?'Perlu Restock':'Aman'"></span></td><td class="p-4"><button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-semibold">Buat PO</button></td></tr></template></tbody></table></div>
       <div x-show="!filteredProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data stok produk.</div>
     </div>
 
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div><h2 class="font-bold text-lg">🛒 Daftar Order Pembelian (PO)</h2><p class="text-xs text-slate-500 mt-1">Cari PO dengan pencarian fuzzy, atur halaman, atau ekspor ke Excel.</p></div>
+        <div><h2 class="font-bold text-lg">🛒 Daftar Order Pembelian (PO)</h2><p class="text-xs text-slate-500 mt-1">Terima PO untuk menambah stok gudang secara otomatis dan mencatat mutasi masuk.</p></div>
         <button @click="exportOrders()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Excel</button>
       </div>
       <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
         <input x-model="orderSearch" @input="orderPage=1" placeholder="Cari nomor PO, produk, supplier, status..." class="w-full sm:max-w-md px-3 py-2.5 border rounded-xl text-sm">
         <div class="flex items-center gap-2 text-sm"><span class="text-slate-500">Baris:</span><select x-model.number="orderPageSize" @change="orderPage=1" class="border rounded-lg px-2 py-2"><option :value="5">5</option><option :value="10">10</option><option :value="20">20</option><option :value="50">50</option></select><span class="text-slate-500" x-text="orderFiltered.length+' hasil'"></span></div>
       </div>
-      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">No. PO</th><th class="p-4">Produk</th><th class="p-4">Supplier</th><th class="p-4">Jumlah</th><th class="p-4">Tanggal</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="o in pagedOrders" :key="o.id"><tr><td class="p-4 font-mono font-bold text-indigo-600" x-text="o.kode"></td><td class="p-4 font-medium" x-text="o.namaProduk"></td><td class="p-4" x-text="o.supplier"></td><td class="p-4" x-text="o.qty+' pcs'"></td><td class="p-4" x-text="o.tanggal||'-'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs" :class="o.status==='Diterima'?'bg-emerald-50 text-emerald-600':'bg-amber-50 text-amber-700'" x-text="o.status"></span></td><td class="p-4"><button x-show="o.status!=='Diterima'" @click="receiveOrder(o.id)" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Terima</button></td></tr></template></tbody></table></div>
+      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">No. PO</th><th class="p-4">Produk</th><th class="p-4">Supplier</th><th class="p-4">Jumlah</th><th class="p-4">Tanggal</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="o in pagedOrders" :key="o.id"><tr><td class="p-4 font-mono font-bold text-indigo-600" x-text="o.kode"></td><td class="p-4 font-medium" x-text="o.namaProduk"></td><td class="p-4" x-text="o.supplier"></td><td class="p-4" x-text="o.qty+' pcs'"></td><td class="p-4" x-text="o.tanggal||'-'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold" :class="o.status==='Diterima'?'bg-emerald-50 text-emerald-600':'bg-amber-50 text-amber-700'" x-text="o.status"></span></td><td class="p-4"><button x-show="o.status!=='Diterima'" @click="receiveOrder(o.id)" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Terima</button></td></tr></template></tbody></table></div>
       <div x-show="!orderFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data PO.</div>
       <div class="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-3 justify-between items-center"><p class="text-xs text-slate-500" x-text="pageInfo(orderPage,orderPageSize,orderFiltered.length)"></p><div class="flex gap-2"><button @click="orderPage=Math.max(1,orderPage-1)" :disabled="orderPage<=1" class="border px-3 py-2 rounded-lg text-sm">Sebelumnya</button><span class="px-3 py-2 text-sm" x-text="orderPage+' / '+orderTotalPages"></span><button @click="orderPage=Math.min(orderTotalPages,orderPage+1)" :disabled="orderPage>=orderTotalPages" class="border px-3 py-2 rounded-lg text-sm">Berikutnya</button></div></div>
     </div>
   </section>
 
-  <!-- OPNAME -->
+  <!-- 6. OPNAME & LAPORAN INVENTORY -->
   <section x-show="activeTab==='opname'" class="space-y-5">
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-      <div class="p-4 sm:p-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><h2 class="font-bold text-lg">📋 Stock Opname Fisik</h2><p class="text-xs text-slate-500 mt-1">Masukkan stok aktual, lalu simpan sesi opname.</p></div><button @click="saveOpname()" class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">💾 Simpan Sesi</button></div>
+      <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-lg">📋 Stock Opname Fisik & Laporan Inventory</h2>
+          <p class="text-xs text-slate-500 mt-1">Masukkan stok fisik gudang aktual, simpan sesi opname, atau unduh laporan inventory lengkap ke Excel.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button @click="exportInventoryReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">📊 Export Laporan Inventory</button>
+          <button @click="saveOpname()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">💾 Simpan Sesi Opname</button>
+        </div>
+      </div>
       <div class="p-3"><input x-model="search" placeholder="Cari SKU atau produk..." class="w-full sm:max-w-sm px-3 py-2.5 border rounded-xl text-sm"></div>
-      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Sistem</th><th class="p-4">Fisik</th><th class="p-4">Selisih</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4" x-text="p.sistem"></td><td class="p-4"><input type="number" min="0" x-model.number="p.fisik" class="w-24 border rounded-lg px-2 py-2"></td><td class="p-4 font-semibold" :class="p.fisik-p.sistem<0?'text-rose-600':(p.fisik-p.sistem>0?'text-blue-600':'text-emerald-600')" x-text="(p.fisik-p.sistem>0?'+':'')+(p.fisik-p.sistem)"></td><td class="p-4"><button @click="editProduct(p)" class="mr-2">✏️</button><button @click="deleteProduct(p.id)">🗑️</button></td></tr></template></tbody></table></div>
+      <div class="table-wrap"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Gudang (Sistem)</th><th class="p-4">Customer</th><th class="p-4">Fisik Gudang</th><th class="p-4">Selisih</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4" x-text="p.sistem"></td><td class="p-4 text-amber-600 font-semibold" x-text="p.stokCustomer||0"></td><td class="p-4"><input type="number" min="0" x-model.number="p.fisik" class="w-24 border rounded-lg px-2 py-2"></td><td class="p-4 font-semibold" :class="p.fisik-p.sistem<0?'text-rose-600':(p.fisik-p.sistem>0?'text-blue-600':'text-emerald-600')" x-text="(p.fisik-p.sistem>0?'+':'')+(p.fisik-p.sistem)"></td><td class="p-4"><button @click="editProduct(p)" class="mr-2">✏️</button><button @click="deleteProduct(p.id)">🗑️</button></td></tr></template></tbody></table></div>
       <div x-show="!filteredProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada produk untuk diopname.</div>
     </div>
 
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-      <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3"><div><h2 class="font-bold text-lg">📜 Riwayat Stock Opname</h2><p class="text-xs text-slate-500 mt-1">Arsip tersimpan di browser (localStorage), dapat diekspor ke Excel.</p></div><button @click="exportHistory()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Excel</button></div>
+      <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3"><div><h2 class="font-bold text-lg">📜 Riwayat Stock Opname</h2><p class="text-xs text-slate-500 mt-1">Arsip tersimpan di browser (localStorage), dapat diekspor ke Excel.</p></div><button @click="exportHistory()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">⬇ Export Opname Excel</button></div>
       <div class="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center justify-between"><input x-model="historySearch" @input="historyPage=1" placeholder="Cari kode opname, tanggal, status..." class="w-full sm:max-w-md px-3 py-2.5 border rounded-xl text-sm"><div class="flex items-center gap-2 text-sm"><span class="text-slate-500">Baris:</span><select x-model.number="historyPageSize" @change="historyPage=1" class="border rounded-lg px-2 py-2"><option :value="5">5</option><option :value="10">10</option><option :value="20">20</option><option :value="50">50</option></select><span class="text-slate-500" x-text="historyFiltered.length+' hasil'"></span></div></div>
       <div class="divide-y"><template x-for="h in pagedHistory" :key="h.id"><div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div class="flex flex-wrap items-center gap-2"><b class="font-mono text-indigo-600" x-text="h.kode"></b><span class="text-sm font-semibold" x-text="h.waktu"></span></div><p class="text-xs text-slate-500 mt-1"><span x-text="h.totalProduk+' produk'"></span> · Sesuai <b class="text-emerald-600" x-text="h.sesuai"></b> · Selisih <b class="text-rose-600" x-text="h.selisih"></b></p></div><div class="flex gap-2"><button @click="selectedHistory=h" class="border px-3 py-2 rounded-lg text-xs">Detail</button><button @click="deleteHistory(h.id)" class="border border-rose-200 text-rose-600 px-3 py-2 rounded-lg text-xs">Hapus</button></div></div></template></div>
       <div x-show="!historyFiltered.length" class="p-8 text-center text-slate-400 text-sm">Belum ada riwayat stock opname.</div>
@@ -107,7 +418,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
   </section>
 </div>
 
-<!-- Modal produk -->
+<!-- Modal Produk -->
 <div x-show="showProductModal" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-3" @keydown.escape.window="showProductModal=false">
  <div @click.outside="showProductModal=false" class="bg-white rounded-2xl p-5 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
   <h3 class="font-bold text-lg mb-4" x-text="isEdit?'Edit Produk':'Tambah Produk'"></h3>
@@ -115,12 +426,88 @@ button:disabled{opacity:.4;cursor:not-allowed}
    <label class="block text-xs font-semibold">SKU<input required x-model.trim="productForm.sku" placeholder="Contoh: SKU-001" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
    <label class="block text-xs font-semibold">Nama Produk<input required x-model.trim="productForm.nama" placeholder="Masukkan nama produk" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
    <div class="grid grid-cols-2 gap-3">
-    <label class="text-xs font-semibold">Stok Sistem<input required min="0" type="number" x-model.number="productForm.sistem" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
-    <label class="text-xs font-semibold">Stok Fisik<input required min="0" type="number" x-model.number="productForm.fisik" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
-    <label class="text-xs font-semibold">Min. Stok<input required min="0" type="number" x-model.number="productForm.minStok" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
-    <label class="text-xs font-semibold">Permintaan / 30 Hari<input required min="0" type="number" x-model.number="productForm.permintaan30Hari" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+    <label class="text-xs font-semibold">Stok Gudang (Sistem)<input required min="0" type="number" x-model.number="productForm.sistem" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+    <label class="text-xs font-semibold">Stok Fisik Gudang<input required min="0" type="number" x-model.number="productForm.fisik" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+    <label class="text-xs font-semibold">Stok di Customer<input required min="0" type="number" x-model.number="productForm.stokCustomer" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+    <label class="text-xs font-semibold">Min. Stok Gudang<input required min="0" type="number" x-model.number="productForm.minStok" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+    <label class="col-span-2 text-xs font-semibold">Permintaan / 30 Hari<input required min="0" type="number" x-model.number="productForm.permintaan30Hari" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
    </div>
    <div class="flex justify-end gap-2 pt-2"><button type="button" @click="showProductModal=false" class="border px-4 py-2 rounded-xl text-sm">Batal</button><button class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm">Simpan</button></div>
+  </form>
+ </div>
+</div>
+
+<!-- Modal Barang Masuk / Keluar -->
+<div x-show="showMovementModal" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-3" @keydown.escape.window="showMovementModal=false">
+ <div @click.outside="showMovementModal=false" class="bg-white rounded-2xl p-5 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
+  <h3 class="font-bold text-lg mb-4" x-text="movementForm.tipe==='IN'?'Catat Barang Masuk':'Catat Barang Keluar'"></h3>
+  <form @submit.prevent="saveMovement()" class="space-y-3">
+   <label class="block text-xs font-semibold">Produk
+    <select x-model.number="movementForm.productId" required class="mt-1 w-full border rounded-xl p-2.5 text-sm">
+     <template x-for="p in products" :key="p.id"><option :value="p.id" x-text="p.sku+' - '+p.nama+' (Gudang: '+p.sistem+' pcs)'"></option></template>
+    </select>
+   </label>
+   <div class="grid grid-cols-2 gap-3">
+    <label class="text-xs font-semibold">Jumlah (pcs)<input required min="1" type="number" x-model.number="movementForm.qty" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+    <template x-if="movementForm.tipe==='OUT'">
+     <label class="text-xs font-semibold">Tujuan Keluar
+      <select x-model="movementForm.tujuan" class="mt-1 w-full border rounded-xl p-2.5 text-sm">
+       <option value="Customer">Kirim ke Customer (Stok Customer)</option>
+       <option value="Keluar Umum">Keluar / Terjual Putus</option>
+      </select>
+     </label>
+    </template>
+   </div>
+   <template x-if="movementForm.tipe==='OUT' && movementForm.tujuan==='Customer'">
+    <label class="block text-xs font-semibold">Nama Customer<input required x-model.trim="movementForm.customer" placeholder="Contoh: Toko Berkah / Klinik Sehat" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+   </template>
+   <label class="block text-xs font-semibold">Serial Number (pisahkan dengan koma atau baris baru, opsional)
+    <textarea x-model="movementForm.serialsText" rows="2" placeholder="Contoh: SN-001, SN-002" class="mt-1 w-full border rounded-xl p-2.5 text-sm font-mono"></textarea>
+   </label>
+   <label class="block text-xs font-semibold">Catatan / Referensi<input x-model.trim="movementForm.catatan" placeholder="No. surat jalan, batch, atau catatan" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+   <div class="flex justify-end gap-2 pt-2"><button type="button" @click="showMovementModal=false" class="border px-4 py-2 rounded-xl text-sm">Batal</button><button class="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm">Simpan Mutasi</button></div>
+  </form>
+ </div>
+</div>
+
+<!-- Modal Retur Customer ke Gudang -->
+<div x-show="showReturnModal" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-3" @keydown.escape.window="showReturnModal=false">
+ <div @click.outside="showReturnModal=false" class="bg-white rounded-2xl p-5 w-full max-w-md shadow-xl">
+  <h3 class="font-bold text-lg mb-4">Retur Barang Customer ke Gudang</h3>
+  <form @submit.prevent="saveReturn()" class="space-y-3">
+   <label class="block text-xs font-semibold">Produk
+    <select x-model.number="returnForm.productId" required class="mt-1 w-full border rounded-xl p-2.5 text-sm">
+     <template x-for="p in products" :key="p.id"><option :value="p.id" x-text="p.sku+' - '+p.nama+' (Customer: '+(p.stokCustomer||0)+' pcs)'"></option></template>
+    </select>
+   </label>
+   <label class="block text-xs font-semibold">Nama Customer<input required x-model.trim="returnForm.customer" placeholder="Nama customer yang meretur" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+   <label class="block text-xs font-semibold">Jumlah Retur (pcs)<input required min="1" type="number" x-model.number="returnForm.qty" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+   <label class="block text-xs font-semibold">Serial Number Diretur (opsional)<input x-model="returnForm.serialsText" placeholder="SN-001, SN-002" class="mt-1 w-full border rounded-xl p-2.5 text-sm font-mono"></label>
+   <div class="flex justify-end gap-2 pt-2"><button type="button" @click="showReturnModal=false" class="border px-4 py-2 rounded-xl text-sm">Batal</button><button class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm">Proses Retur</button></div>
+  </form>
+ </div>
+</div>
+
+<!-- Modal Daftarkan Serial Number -->
+<div x-show="showSerialModal" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-3" @keydown.escape.window="showSerialModal=false">
+ <div @click.outside="showSerialModal=false" class="bg-white rounded-2xl p-5 w-full max-w-md shadow-xl">
+  <h3 class="font-bold text-lg mb-4">Daftarkan Serial Number</h3>
+  <form @submit.prevent="saveSerial()" class="space-y-3">
+   <label class="block text-xs font-semibold">Produk
+    <select x-model.number="serialForm.productId" required class="mt-1 w-full border rounded-xl p-2.5 text-sm">
+     <template x-for="p in products" :key="p.id"><option :value="p.id" x-text="p.sku+' - '+p.nama"></option></template>
+    </select>
+   </label>
+   <label class="block text-xs font-semibold">Serial Number<input required x-model.trim="serialForm.sn" placeholder="Contoh: SN-PC-2026-001" class="mt-1 w-full border rounded-xl p-2.5 text-sm font-mono"></label>
+   <label class="block text-xs font-semibold">Lokasi Saat Ini
+    <select x-model="serialForm.lokasi" class="mt-1 w-full border rounded-xl p-2.5 text-sm">
+     <option value="Gudang">Gudang</option>
+     <option value="Customer">Customer</option>
+     <option value="Keluar/Terjual">Keluar/Terjual</option>
+    </select>
+   </label>
+   <label class="block text-xs font-semibold">Customer / Keterangan<input x-model.trim="serialForm.customer" placeholder="Nama customer jika di customer" class="mt-1 w-full border rounded-xl p-2.5 text-sm"></label>
+   <div class="flex justify-end gap-2 pt-2"><button type="button" @click="showSerialModal=false" class="border px-4 py-2 rounded-xl text-sm">Batal</button><button class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm">Simpan</button></div>
   </form>
  </div>
 </div>
@@ -138,11 +525,33 @@ button:disabled{opacity:.4;cursor:not-allowed}
  </div>
 </div>
 
-<!-- Detail riwayat -->
+<!-- Modal Detail Riwayat Opname -->
 <div x-show="selectedHistory" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-3">
  <div @click.outside="selectedHistory=null" class="bg-white rounded-2xl p-5 w-full max-w-3xl max-h-[88vh] flex flex-col">
   <div class="flex justify-between items-start mb-4"><div><b class="text-indigo-600 font-mono" x-text="selectedHistory?.kode"></b><h3 class="font-bold text-lg">Detail Stock Opname</h3><p class="text-xs text-slate-500" x-text="selectedHistory?.waktu"></p></div><button @click="selectedHistory=null" class="text-2xl">×</button></div>
-  <div class="overflow-auto border rounded-xl"><table class="w-full text-sm text-left"><thead class="bg-slate-50"><tr><th class="p-3">SKU</th><th class="p-3">Produk</th><th class="p-3">Sistem</th><th class="p-3">Fisik</th><th class="p-3">Selisih</th></tr></thead><tbody class="divide-y"><template x-for="d in (selectedHistory?.items||[])" :key="d.sku"><tr><td class="p-3" x-text="d.sku"></td><td class="p-3" x-text="d.nama"></td><td class="p-3" x-text="d.sistem"></td><td class="p-3" x-text="d.fisik"></td><td class="p-3" x-text="d.fisik-d.sistem"></td></tr></template></tbody></table></div>
+  <div class="overflow-auto border rounded-xl"><table class="w-full text-sm text-left"><thead class="bg-slate-50"><tr><th class="p-3">SKU</th><th class="p-3">Produk</th><th class="p-3">Gudang (Sistem)</th><th class="p-3">Customer</th><th class="p-3">Fisik</th><th class="p-3">Selisih</th></tr></thead><tbody class="divide-y"><template x-for="d in (selectedHistory?.items||[])" :key="d.sku"><tr><td class="p-3" x-text="d.sku"></td><td class="p-3" x-text="d.nama"></td><td class="p-3" x-text="d.sistem"></td><td class="p-3" x-text="d.stokCustomer||0"></td><td class="p-3" x-text="d.fisik"></td><td class="p-3" x-text="d.fisik-d.sistem"></td></tr></template></tbody></table></div>
+ </div>
+</div>
+
+<!-- Modal Detail Riwayat Serial Number -->
+<div x-show="selectedSerial" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-3">
+ <div @click.outside="selectedSerial=null" class="bg-white rounded-2xl p-5 w-full max-w-xl max-h-[85vh] flex flex-col">
+  <div class="flex justify-between items-start mb-4">
+   <div>
+    <b class="text-indigo-600 font-mono" x-text="selectedSerial?.sn"></b>
+    <h3 class="font-bold text-lg" x-text="selectedSerial?.namaProduk"></h3>
+    <p class="text-xs text-slate-500" x-text="'Lokasi: '+(selectedSerial?.lokasi||'')+' · Customer: '+(selectedSerial?.customer||'-')"></p>
+   </div>
+   <button @click="selectedSerial=null" class="text-2xl">×</button>
+  </div>
+  <div class="overflow-auto border rounded-xl divide-y">
+   <template x-for="(ev, idx) in (selectedSerial?.logs||[])" :key="idx">
+    <div class="p-3 text-xs">
+     <div class="flex justify-between font-semibold text-slate-800"><span x-text="ev.aksi"></span><span class="text-slate-400" x-text="ev.waktu"></span></div>
+     <p class="text-slate-500 mt-1" x-text="ev.detail"></p>
+    </div>
+   </template>
+  </div>
  </div>
 </div>
 
@@ -150,24 +559,94 @@ button:disabled{opacity:.4;cursor:not-allowed}
 function warehouseApp(){
  const read=(key,fallback)=>{try{const v=localStorage.getItem(key);return v===null?fallback:JSON.parse(v)}catch(e){return fallback}};
  return {
-  activeTab:'demand',search:'',orderSearch:'',historySearch:'',showProductModal:false,showOrderModal:false,isEdit:false,selectedHistory:null,
-  products:read('warehouse_products',[]),orders:read('warehouse_orders',[]),history:read('opname_history',[]),
-  orderPage:1,historyPage:1,orderPageSize:10,historyPageSize:10,
-  productForm:{id:null,sku:'',nama:'',sistem:0,fisik:0,minStok:0,permintaan30Hari:0},orderForm:{productId:null,supplier:'',qty:1},
+  activeTab:'demand',
+  search:'',orderSearch:'',historySearch:'',movementSearch:'',movementTypeFilter:'ALL',serialSearch:'',serialLocationFilter:'ALL',
+  showProductModal:false,showOrderModal:false,showMovementModal:false,showReturnModal:false,showSerialModal:false,
+  isEdit:false,selectedHistory:null,selectedSerial:null,
+  products:read('warehouse_products',[]).map(p=>({...p,stokCustomer:Number(p.stokCustomer||0)})),
+  orders:read('warehouse_orders',[]),
+  history:read('opname_history',[]),
+  movements:read('warehouse_movements',[]),
+  serials:read('warehouse_serials',[]),
+  orderPage:1,historyPage:1,movementPage:1,serialPage:1,
+  orderPageSize:10,historyPageSize:10,movementPageSize:10,serialPageSize:10,
+  productForm:{id:null,sku:'',nama:'',sistem:0,fisik:0,stokCustomer:0,minStok:0,permintaan30Hari:0},
+  orderForm:{productId:null,supplier:'',qty:1},
+  movementForm:{tipe:'IN',productId:null,qty:1,tujuan:'Customer',customer:'',serialsText:'',catatan:''},
+  returnForm:{productId:null,customer:'',qty:1,serialsText:''},
+  serialForm:{productId:null,sn:'',lokasi:'Gudang',customer:''},
+
   init(){this.persist();},
-  persist(){localStorage.setItem('warehouse_products',JSON.stringify(this.products));localStorage.setItem('warehouse_orders',JSON.stringify(this.orders));localStorage.setItem('opname_history',JSON.stringify(this.history));},
+  persist(){
+   localStorage.setItem('warehouse_products',JSON.stringify(this.products));
+   localStorage.setItem('warehouse_orders',JSON.stringify(this.orders));
+   localStorage.setItem('opname_history',JSON.stringify(this.history));
+   localStorage.setItem('warehouse_movements',JSON.stringify(this.movements));
+   localStorage.setItem('warehouse_serials',JSON.stringify(this.serials));
+  },
   tabClass(t){return this.activeTab===t?'bg-white text-indigo-600 shadow-sm':'text-slate-600 hover:text-slate-900';},
+
+  get totalWarehouseStock(){return this.products.reduce((s,p)=>s+Number(p.sistem||0),0);},
+  get totalCustomerStock(){return this.products.reduce((s,p)=>s+Number(p.stokCustomer||0),0);},
+  totalProductStock(p){return Number(p.sistem||0)+Number(p.stokCustomer||0);},
+  get lowStockProducts(){return this.products.filter(p=>Number(p.sistem)<=Number(p.minStok));},
+  get fastMovingProducts(){return this.products.filter(p=>Number(p.permintaan30Hari)>=150);},
+
   get filteredProducts(){return this.products.filter(p=>this.fuzzyMatch(this.search,[p.sku,p.nama]));},
   get demandProducts(){return [...this.filteredProducts].sort((a,b)=>b.permintaan30Hari-a.permintaan30Hari);},
-  get fastMovingProducts(){return this.products.filter(p=>p.permintaan30Hari>=150);},
   get orderFiltered(){return this.orders.filter(o=>this.fuzzyMatch(this.orderSearch,[o.kode,o.namaProduk,o.supplier,o.status,o.tanggal]));},
   get historyFiltered(){return this.history.filter(h=>this.fuzzyMatch(this.historySearch,[h.kode,h.waktu,String(h.totalProduk),String(h.sesuai),String(h.selisih)]));},
+
+  get movementFiltered(){
+   return this.movements.filter(m=>{
+    if(this.movementTypeFilter!=='ALL'&&m.tipe!==this.movementTypeFilter)return false;
+    return this.fuzzyMatch(this.movementSearch,[m.waktu,m.sku,m.namaProduk,m.customer,m.catatan,(m.serials||[]).join(' ')]);
+   });
+  },
+  get serialFiltered(){
+   return this.serials.filter(s=>{
+    if(this.serialLocationFilter!=='ALL'&&s.lokasi!==this.serialLocationFilter)return false;
+    return this.fuzzyMatch(this.serialSearch,[s.sn,s.sku,s.namaProduk,s.lokasi,s.customer]);
+   });
+  },
+
+  get customerHoldings(){
+   const map=new Map();
+   this.serials.filter(s=>s.lokasi==='Customer'&&s.customer).forEach(s=>{
+    const key=(s.customer||'').toLowerCase()+'__'+s.sku;
+    if(!map.has(key))map.set(key,{key,customer:s.customer,sku:s.sku,namaProduk:s.namaProduk,qty:0,serials:[]});
+    const entry=map.get(key);
+    entry.qty+=1;
+    entry.serials.push(s.sn);
+   });
+   if(!map.size){
+    this.movements.filter(m=>m.tipe==='OUT'&&m.customer).forEach(m=>{
+     const key=(m.customer||'').toLowerCase()+'__'+m.sku;
+     if(!map.has(key))map.set(key,{key,customer:m.customer,sku:m.sku,namaProduk:m.namaProduk,qty:0,serials:[]});
+     map.get(key).qty+=Number(m.qty||0);
+    });
+   }
+   return Array.from(map.values()).filter(r=>r.qty>0&&this.fuzzyMatch(this.search,[r.customer,r.sku,r.namaProduk,r.serials.join(' ')]));
+  },
+
   get pagedOrders(){this.clampPage('order');return this.orderFiltered.slice((this.orderPage-1)*this.orderPageSize,this.orderPage*this.orderPageSize);},
   get pagedHistory(){this.clampPage('history');return this.historyFiltered.slice((this.historyPage-1)*this.historyPageSize,this.historyPage*this.historyPageSize);},
+  get pagedMovements(){this.clampPage('movement');return this.movementFiltered.slice((this.movementPage-1)*this.movementPageSize,this.movementPage*this.movementPageSize);},
+  get pagedSerials(){this.clampPage('serial');return this.serialFiltered.slice((this.serialPage-1)*this.serialPageSize,this.serialPage*this.serialPageSize);},
+
   get orderTotalPages(){return Math.max(1,Math.ceil(this.orderFiltered.length/this.orderPageSize));},
   get historyTotalPages(){return Math.max(1,Math.ceil(this.historyFiltered.length/this.historyPageSize));},
-  clampPage(type){if(type==='order')this.orderPage=Math.min(this.orderPage,Math.max(1,Math.ceil(this.orderFiltered.length/this.orderPageSize)));else this.historyPage=Math.min(this.historyPage,Math.max(1,Math.ceil(this.historyFiltered.length/this.historyPageSize)));},
+  get movementTotalPages(){return Math.max(1,Math.ceil(this.movementFiltered.length/this.movementPageSize));},
+  get serialTotalPages(){return Math.max(1,Math.ceil(this.serialFiltered.length/this.serialPageSize));},
+
+  clampPage(type){
+   if(type==='order')this.orderPage=Math.min(this.orderPage,this.orderTotalPages);
+   else if(type==='history')this.historyPage=Math.min(this.historyPage,this.historyTotalPages);
+   else if(type==='movement')this.movementPage=Math.min(this.movementPage,this.movementTotalPages);
+   else if(type==='serial')this.serialPage=Math.min(this.serialPage,this.serialTotalPages);
+  },
   pageInfo(page,size,total){return total?`Menampilkan ${Math.min((page-1)*size+1,total)}–${Math.min(page*size,total)} dari ${total} data`:'Tidak ada data';},
+
   fuzzyMatch(query,fields){
    const q=String(query||'').toLowerCase().trim();if(!q)return true;
    const tokens=q.split(/\s+/);
@@ -187,20 +666,105 @@ function warehouseApp(){
     edits+=(a.length-i)+(w.length-j);return edits<=1;
    });
   },
+
+  parseSerials(text){
+   return Array.from(new Set(String(text||'').split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean)));
+  },
+  upsertSerialLog(sn,product,lokasi,customer,aksi,detail){
+   const now=new Date().toLocaleString('id-ID');
+   let item=this.serials.find(x=>x.sn.toLowerCase()===sn.toLowerCase());
+   if(!item){
+    item={sn,sku:product.sku,namaProduk:product.nama,productId:product.id,lokasi,customer:customer||'',updatedAt:now,logs:[]};
+    this.serials.unshift(item);
+   }else{
+    item.sku=product.sku;item.namaProduk=product.nama;item.productId=product.id;
+    item.lokasi=lokasi;item.customer=customer||'';item.updatedAt=now;
+   }
+   item.logs.unshift({waktu:now,aksi,detail});
+  },
+
   dailyDemand(p){return Number(p.permintaan30Hari||0)/30;},
   daysOfCover(p){const d=this.dailyDemand(p);return d<=0?99:Math.max(0,Math.floor(p.sistem/d));},
   suggestedOrderQty(p){return Math.max(20,Math.ceil(this.dailyDemand(p)*14)-Number(p.sistem));},
-  openProductModal(){this.isEdit=false;this.productForm={id:null,sku:'',nama:'',sistem:0,fisik:0,minStok:0,permintaan30Hari:0};this.showProductModal=true;},
-  editProduct(p){this.isEdit=true;this.productForm={...p};this.showProductModal=true;},
+
+  openProductModal(){this.isEdit=false;this.productForm={id:null,sku:'',nama:'',sistem:0,fisik:0,stokCustomer:0,minStok:0,permintaan30Hari:0};this.showProductModal=true;},
+  editProduct(p){this.isEdit=true;this.productForm={...p,stokCustomer:Number(p.stokCustomer||0)};this.showProductModal=true;},
   saveProduct(){
    if(!this.productForm.sku||!this.productForm.nama)return;
    const duplicate=this.products.some(p=>p.sku.toLowerCase()===this.productForm.sku.toLowerCase()&&p.id!==this.productForm.id);
    if(duplicate){alert('SKU sudah digunakan.');return;}
-   if(this.isEdit){const i=this.products.findIndex(p=>p.id===this.productForm.id);if(i>=0)this.products.splice(i,1,{...this.productForm});}
-   else this.products.push({...this.productForm,id:Date.now()});
+   const payload={...this.productForm,sistem:Number(this.productForm.sistem||0),fisik:Number(this.productForm.fisik||0),stokCustomer:Number(this.productForm.stokCustomer||0),minStok:Number(this.productForm.minStok||0),permintaan30Hari:Number(this.productForm.permintaan30Hari||0)};
+   if(this.isEdit){const i=this.products.findIndex(p=>p.id===payload.id);if(i>=0)this.products.splice(i,1,payload);}
+   else this.products.push({...payload,id:Date.now()});
    this.showProductModal=false;this.persist();
   },
   deleteProduct(id){if(!confirm('Hapus produk ini?'))return;this.products=this.products.filter(p=>p.id!==id);this.persist();},
+
+  openMovementModal(tipe='IN',productId=null){
+   if(!this.products.length){alert('Tambahkan produk terlebih dahulu.');return;}
+   this.movementForm={tipe,productId:productId??this.products[0].id,qty:1,tujuan:'Customer',customer:'',serialsText:'',catatan:''};
+   this.showMovementModal=true;
+  },
+  saveMovement(){
+   const p=this.products.find(x=>x.id===Number(this.movementForm.productId));
+   if(!p)return;
+   const qty=Number(this.movementForm.qty||0);
+   if(qty<=0)return;
+   const serialList=this.parseSerials(this.movementForm.serialsText);
+   const now=new Date().toLocaleString('id-ID');
+
+   if(this.movementForm.tipe==='IN'){
+    p.sistem=Number(p.sistem)+qty;
+    p.fisik=Number(p.fisik)+qty;
+    serialList.forEach(sn=>this.upsertSerialLog(sn,p,'Gudang','', 'Barang Masuk', `Masuk ${qty} pcs ke Gudang. ${this.movementForm.catatan||''}`));
+    this.movements.unshift({id:Date.now(),waktu:now,tipe:'IN',productId:p.id,sku:p.sku,namaProduk:p.nama,qty,customer:'',serials:serialList,catatan:this.movementForm.catatan});
+   }else{
+    if(Number(p.sistem)<qty){alert('Stok gudang tidak mencukupi.');return;}
+    p.sistem=Number(p.sistem)-qty;
+    p.fisik=Number(p.fisik)-qty;
+    const isCust=this.movementForm.tujuan==='Customer';
+    const custName=isCust?(this.movementForm.customer||'Customer'):'';
+    if(isCust)p.stokCustomer=Number(p.stokCustomer||0)+qty;
+    serialList.forEach(sn=>this.upsertSerialLog(sn,p,isCust?'Customer':'Keluar/Terjual',custName,'Barang Keluar',isCust?`Dikirim ke customer ${custName} (${qty} pcs)`:`Keluar/terjual (${qty} pcs)`));
+    this.movements.unshift({id:Date.now(),waktu:now,tipe:'OUT',productId:p.id,sku:p.sku,namaProduk:p.nama,qty,customer:custName,serials:serialList,catatan:this.movementForm.catatan});
+   }
+   this.showMovementModal=false;this.activeTab='movements';this.movementPage=1;this.persist();
+  },
+  deleteMovement(id){if(!confirm('Hapus catatan mutasi ini? (Tidak mengubah stok yang sudah tercatat)'))return;this.movements=this.movements.filter(m=>m.id!==id);this.persist();},
+
+  openReturnModal(productId=null){
+   if(!this.products.length){alert('Tambahkan produk terlebih dahulu.');return;}
+   this.returnForm={productId:productId??this.products[0].id,customer:'',qty:1,serialsText:''};
+   this.showReturnModal=true;
+  },
+  saveReturn(){
+   const p=this.products.find(x=>x.id===Number(this.returnForm.productId));
+   if(!p)return;
+   const qty=Number(this.returnForm.qty||0);
+   if(qty<=0)return;
+   p.stokCustomer=Math.max(0,Number(p.stokCustomer||0)-qty);
+   p.sistem=Number(p.sistem)+qty;
+   p.fisik=Number(p.fisik)+qty;
+   const serialList=this.parseSerials(this.returnForm.serialsText);
+   const now=new Date().toLocaleString('id-ID');
+   serialList.forEach(sn=>this.upsertSerialLog(sn,p,'Gudang','','Retur ke Gudang',`Retur ${qty} pcs dari customer ${this.returnForm.customer}`));
+   this.movements.unshift({id:Date.now(),waktu:now,tipe:'IN',productId:p.id,sku:p.sku,namaProduk:p.nama,qty,customer:'',serials:serialList,catatan:`Retur dari ${this.returnForm.customer}`});
+   this.showReturnModal=false;this.persist();
+  },
+
+  openSerialModal(){
+   if(!this.products.length){alert('Tambahkan produk terlebih dahulu.');return;}
+   this.serialForm={productId:this.products[0].id,sn:'',lokasi:'Gudang',customer:''};
+   this.showSerialModal=true;
+  },
+  saveSerial(){
+   const p=this.products.find(x=>x.id===Number(this.serialForm.productId));
+   if(!p||!this.serialForm.sn)return;
+   this.upsertSerialLog(this.serialForm.sn,p,this.serialForm.lokasi,this.serialForm.customer,'Registrasi / Update Serial',`Lokasi: ${this.serialForm.lokasi}${this.serialForm.customer?' ('+this.serialForm.customer+')':''}`);
+   this.showSerialModal=false;this.activeTab='serials';this.persist();
+  },
+  deleteSerial(sn){if(!confirm(`Hapus serial number ${sn}?`))return;this.serials=this.serials.filter(s=>s.sn!==sn);this.persist();},
+
   openOrderModal(productId=null,qty=1){if(!this.products.length){alert('Tambahkan produk terlebih dahulu.');return;}this.orderForm={productId:productId??this.products[0].id,supplier:'',qty};this.showOrderModal=true;},
   createOrder(){
    const p=this.products.find(x=>x.id===Number(this.orderForm.productId));if(!p)return;
@@ -208,30 +772,60 @@ function warehouseApp(){
    this.orders.unshift({id:Date.now(),kode:'PO-'+String(next).padStart(3,'0'),productId:p.id,namaProduk:p.nama,supplier:this.orderForm.supplier,qty:Number(this.orderForm.qty),status:'Menunggu',tanggal:new Date().toLocaleDateString('id-ID')});
    this.showOrderModal=false;this.activeTab='order_stock';this.orderPage=1;this.persist();
   },
-  receiveOrder(id){const o=this.orders.find(x=>x.id===id);if(!o||o.status==='Diterima')return;if(!confirm(`Terima ${o.qty} pcs ${o.namaProduk}?`))return;const p=this.products.find(x=>x.id===o.productId);if(p){p.sistem=Number(p.sistem)+Number(o.qty);p.fisik=Number(p.fisik)+Number(o.qty);}o.status='Diterima';this.persist();},
+  receiveOrder(id){
+   const o=this.orders.find(x=>x.id===id);if(!o||o.status==='Diterima')return;
+   if(!confirm(`Terima ${o.qty} pcs ${o.namaProduk} ke gudang?`))return;
+   const p=this.products.find(x=>x.id===o.productId);
+   if(p){
+    p.sistem=Number(p.sistem)+Number(o.qty);
+    p.fisik=Number(p.fisik)+Number(o.qty);
+    this.movements.unshift({id:Date.now(),waktu:new Date().toLocaleString('id-ID'),tipe:'IN',productId:p.id,sku:p.sku,namaProduk:p.nama,qty:Number(o.qty),customer:'',serials:[],catatan:`Penerimaan ${o.kode} (${o.supplier})`});
+   }
+   o.status='Diterima';this.persist();
+  },
+
   saveOpname(){
    if(!this.products.length){alert('Belum ada produk.');return;}
    const now=new Date(),record={id:Date.now(),kode:'OPN-'+String(Math.max(0,...this.history.map(h=>Number((h.kode.match(/\d+/)||[])[0])))+1).padStart(3,'0'),waktu:now.toLocaleString('id-ID'),totalProduk:this.products.length,sesuai:this.products.filter(p=>Number(p.fisik)===Number(p.sistem)).length,selisih:this.products.filter(p=>Number(p.fisik)!==Number(p.sistem)).length,items:JSON.parse(JSON.stringify(this.products))};
    this.history.unshift(record);this.persist();
-   if(confirm('Sesi opname tersimpan. Samakan stok sistem dengan stok fisik sekarang?')){this.products.forEach(p=>p.sistem=Number(p.fisik));this.persist();}
+   if(confirm('Sesi opname tersimpan. Samakan stok gudang sistem dengan stok fisik sekarang?')){this.products.forEach(p=>p.sistem=Number(p.fisik));this.persist();}
    this.historyPage=1;
   },
   deleteHistory(id){if(!confirm('Hapus riwayat opname ini?'))return;this.history=this.history.filter(h=>h.id!==id);this.persist();},
+
+  checkXlsx(){if(!window.XLSX){alert('Library Excel belum termuat. Periksa koneksi internet.');return false;}return true;},
+  exportInventoryReport(){
+   if(!this.checkXlsx())return;
+   const rows=this.products.map(p=>({'SKU':p.sku,'Produk':p.nama,'Stok Gudang (Sistem)':p.sistem,'Stok Fisik Gudang':p.fisik,'Selisih':Number(p.fisik)-Number(p.sistem),'Stok di Customer':p.stokCustomer||0,'Total Stok':this.totalProductStock(p),'Min. Stok':p.minStok,'Permintaan 30 Hari':p.permintaan30Hari,'Status Restock':Number(p.sistem)<=Number(p.minStok)?'Perlu Restock':'Aman'}));
+   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Laporan Inventory');XLSX.writeFile(wb,'Laporan_Inventory.xlsx');
+  },
+  exportMovements(){
+   if(!this.checkXlsx())return;
+   const rows=this.movements.map(m=>({'Waktu':m.waktu,'Jenis':m.tipe==='IN'?'Barang Masuk':'Barang Keluar','SKU':m.sku,'Produk':m.namaProduk,'Jumlah (pcs)':m.qty,'Customer / Tujuan':m.customer||(m.tipe==='IN'?'Gudang Utama':'Keluar Umum'),'Serial Number':(m.serials||[]).join(', '),'Catatan':m.catatan||'-'}));
+   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Mutasi Masuk Keluar');XLSX.writeFile(wb,'Mutasi_Barang_Masuk_Keluar.xlsx');
+  },
+  exportSerials(){
+   if(!this.checkXlsx())return;
+   const rows=this.serials.map(s=>({'Serial Number':s.sn,'SKU':s.sku,'Produk':s.namaProduk,'Lokasi':s.lokasi,'Customer':s.customer||'-','Update Terakhir':s.updatedAt}));
+   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Serial Number');XLSX.writeFile(wb,'Tracking_Serial_Number.xlsx');
+  },
   exportOrders(){
-   if(!window.XLSX){alert('Library Excel belum termuat. Periksa koneksi internet.');return;}
+   if(!this.checkXlsx())return;
    const rows=this.orders.map(o=>({'No. PO':o.kode,'Produk':o.namaProduk,'Supplier':o.supplier,'Jumlah (pcs)':o.qty,'Tanggal':o.tanggal||'-','Status':o.status}));
    const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Daftar PO');XLSX.writeFile(wb,'Daftar_Order_Pembelian.xlsx');
   },
   exportHistory(){
-   if(!window.XLSX){alert('Library Excel belum termuat. Periksa koneksi internet.');return;}
-   const rows=[];this.history.forEach(h=>h.items.forEach(i=>rows.push({'Kode Opname':h.kode,'Waktu':h.waktu,'SKU':i.sku,'Produk':i.nama,'Stok Sistem':i.sistem,'Stok Fisik':i.fisik,'Selisih':Number(i.fisik)-Number(i.sistem)})));
+   if(!this.checkXlsx())return;
+   const rows=[];this.history.forEach(h=>h.items.forEach(i=>rows.push({'Kode Opname':h.kode,'Waktu':h.waktu,'SKU':i.sku,'Produk':i.nama,'Stok Gudang Sistem':i.sistem,'Stok Customer':i.stokCustomer||0,'Stok Fisik':i.fisik,'Selisih':Number(i.fisik)-Number(i.sistem)})));
    const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Riwayat Opname');XLSX.writeFile(wb,'Riwayat_Stock_Opname.xlsx');
   },
   clearStorage(){
-   if(!confirm('Hapus seluruh data tersimpan (produk, PO, dan riwayat opname)?'))return;
-   localStorage.removeItem('warehouse_products');localStorage.removeItem('warehouse_orders');localStorage.removeItem('opname_history');
-   this.products=[];this.orders=[];this.history=[];
-   this.search='';this.orderSearch='';this.historySearch='';this.orderPage=1;this.historyPage=1;this.selectedHistory=null;this.persist();
+   if(!confirm('Hapus seluruh data tersimpan (produk, mutasi, serial, PO, dan riwayat opname)?'))return;
+   ['warehouse_products','warehouse_orders','opname_history','warehouse_movements','warehouse_serials'].forEach(k=>localStorage.removeItem(k));
+   this.products=[];this.orders=[];this.history=[];this.movements=[];this.serials=[];
+   this.search='';this.orderSearch='';this.historySearch='';this.movementSearch='';this.serialSearch='';
+   this.orderPage=1;this.historyPage=1;this.movementPage=1;this.serialPage=1;
+   this.selectedHistory=null;this.selectedSerial=null;this.persist();
    alert('Seluruh data berhasil dihapus.');
   }
  };
