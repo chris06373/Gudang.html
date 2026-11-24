@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#4f46e5">
-<title>Sistem Gudang Terpadu</title>
+<title>Sistem Gudang Terpadu · CJ Tech</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%234f46e5'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M18 24l14-8 14 8v16l-14 8-14-8z' fill='none' stroke='%23fff' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M18 24l14 8 14-8M32 32v16' fill='none' stroke='%23fff' stroke-width='2.5'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%2338bdf8'/%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -30,26 +31,60 @@ button:disabled{opacity:.4;cursor:not-allowed}
   <input type="file" x-ref="productExcelInput" accept=".xlsx,.xls,.csv" class="hidden" @change="handleProductExcelUpload($event)">
   <input type="file" x-ref="serialExcelInput" accept=".xlsx,.xls,.csv" class="hidden" @change="handleSerialExcelUpload($event)">
 
-  <!-- Header -->
+  <!-- Header dengan Logo SVG Sistem Terpadu CJ Tech -->
   <header class="flex flex-col xl:flex-row justify-between gap-4 mb-4 sm:mb-5 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
-    <div>
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="bg-indigo-50 text-indigo-600 text-[11px] sm:text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Sistem Manajemen Gudang</span>
-        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-full">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Real-Time · Mobile & Excel
-        </span>
+    <div class="flex items-start gap-3.5 sm:gap-4">
+      <!-- Logo SVG CJ Tech Sistem Terpadu -->
+      <div class="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-sky-500 p-2.5 shadow-md shadow-indigo-500/20 flex items-center justify-center" title="CJ Tech - Sistem Gudang Terpadu">
+        <svg id="cjTechLogoSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" class="w-full h-full" role="img" aria-label="Logo CJ Tech Sistem Terpadu">
+          <defs>
+            <linearGradient id="cjCoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="100%" stop-color="#e0f2fe"/>
+            </linearGradient>
+            <linearGradient id="cjAccentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#67e8f9"/>
+              <stop offset="100%" stop-color="#a5f3fc"/>
+            </linearGradient>
+          </defs>
+          <!-- Outer Integrated Ring -->
+          <circle cx="48" cy="48" r="42" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2.5" stroke-dasharray="10 6"/>
+          <!-- Isometric Warehouse Cube (Sistem Terpadu) -->
+          <polygon points="48,20 72,34 48,48 24,34" fill="url(#cjCoreGrad)" opacity="0.96"/>
+          <polygon points="24,34 48,48 48,74 24,60" fill="#c7d2fe" opacity="0.92"/>
+          <polygon points="48,48 72,34 72,60 48,74" fill="#93c5fd" opacity="0.92"/>
+          <!-- Integrated Tech Circuit Nodes -->
+          <circle cx="48" cy="34" r="5" fill="#4f46e5"/>
+          <circle cx="36" cy="54" r="3.2" fill="#312e81"/>
+          <circle cx="60" cy="54" r="3.2" fill="#1e40af"/>
+          <line x1="48" y1="34" x2="36" y2="54" stroke="#4f46e5" stroke-width="2" stroke-linecap="round"/>
+          <line x1="48" y1="34" x2="60" y2="54" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"/>
+          <!-- CJ Tech Badge -->
+          <rect x="14" y="72" width="68" height="16" rx="8" fill="#0f172a"/>
+          <text x="48" y="83" text-anchor="middle" fill="url(#cjAccentGrad)" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" font-weight="800" letter-spacing="1.2">CJ TECH</text>
+        </svg>
       </div>
-      <h1 class="text-xl sm:text-2xl font-bold text-slate-900 mt-2">Gudang Personal Care</h1>
-      <p class="text-xs sm:text-sm text-slate-500 mt-1">Permintaan barang, mutasi masuk/keluar, serial number, stok gudang & customer, PO, serta stock opname.</p>
+
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="bg-indigo-50 text-indigo-700 text-[11px] sm:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">CJ Tech · Sistem Gudang Terpadu</span>
+          <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Real-Time · Mobile &amp; Excel
+          </span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 mt-2">Gudang Personal Care</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">Permintaan barang, mutasi masuk/keluar, serial number, stok gudang &amp; customer, PO, serta stock opname.</p>
+      </div>
     </div>
-    <div class="bg-slate-100 p-1.5 rounded-xl w-full xl:w-auto">
+
+    <div class="bg-slate-100 p-1.5 rounded-xl w-full xl:w-auto self-start">
       <div class="tabs-scroll">
         <button @click="activeTab='demand'" :class="tabClass('demand')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🔥 Permintaan</button>
         <button @click="activeTab='movements'" :class="tabClass('movements')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🔄 Masuk/Keluar</button>
-        <button @click="activeTab='locations'" :class="tabClass('locations')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏢 Gudang & Customer</button>
+        <button @click="activeTab='locations'" :class="tabClass('locations')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏢 Gudang &amp; Customer</button>
         <button @click="activeTab='serials'" :class="tabClass('serials')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">🏷️ Serial Number</button>
         <button @click="activeTab='order_stock'" :class="tabClass('order_stock')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">PO</button>
-        <button @click="activeTab='opname'" :class="tabClass('opname')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">📋 Opname & Laporan</button>
+        <button @click="activeTab='opname'" :class="tabClass('opname')" class="shrink-0 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition">📋 Opname &amp; Laporan</button>
       </div>
     </div>
   </header>
@@ -96,15 +131,22 @@ button:disabled{opacity:.4;cursor:not-allowed}
       </div>
     </div>
 
-    <!-- Excel Import & Format Bar -->
-    <div class="pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+    <!-- Excel Import, Logo Export & Format Bar -->
+    <div class="pt-2.5 border-t border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-2 text-xs">
       <div class="flex flex-wrap items-center gap-2">
         <span class="font-semibold text-slate-600">📊 Input Excel:</span>
-        <button @click="$refs.productExcelInput.click()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-semibold">⬆ Import Produk & Stok</button>
+        <button @click="$refs.productExcelInput.click()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-semibold">⬆ Import Produk &amp; Stok</button>
         <button @click="$refs.serialExcelInput.click()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-semibold">⬆ Import Serial Number</button>
         <button @click="showFormatGuide=true" class="bg-amber-50 hover:bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg font-semibold">📄 Format Upload</button>
       </div>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="inline-flex items-center gap-1.5 text-slate-600 font-medium cursor-pointer">
+          <input type="checkbox" x-model="autoDownloadSvgLogo" class="rounded border-slate-300 text-indigo-600">
+          <span>Sertakan file Logo SVG saat export Excel</span>
+        </label>
+        <span class="text-slate-300">|</span>
+        <button @click="downloadCjTechLogoSvg()" class="text-sky-700 hover:underline font-semibold">🎨 Logo CJ Tech (.svg)</button>
+        <span class="text-slate-300">|</span>
         <button @click="downloadProductTemplate()" class="text-indigo-600 hover:underline font-semibold">⬇ Template Produk (.xlsx)</button>
         <span class="text-slate-300">|</span>
         <button @click="downloadSerialTemplate()" class="text-emerald-600 hover:underline font-semibold">⬇ Template Serial (.xlsx)</button>
@@ -116,7 +158,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
   <section x-show="activeTab==='demand'" class="space-y-5">
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b">
-        <h2 class="font-bold text-base sm:text-lg">🔥 Permintaan Barang & Barang Laku</h2>
+        <h2 class="font-bold text-base sm:text-lg">🔥 Permintaan Barang &amp; Barang Laku</h2>
         <p class="text-xs text-slate-500 mt-1">Diurutkan berdasarkan permintaan 30 hari terakhir. Fast moving ≥ 150 pcs.</p>
       </div>
       <div class="table-wrap desktop-table">
@@ -170,7 +212,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
           </div>
         </template>
       </div>
-      <div x-show="!demandProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data produk. Klik <b>+ Produk</b> atau <b>Import Produk & Stok</b>.</div>
+      <div x-show="!demandProducts.length" class="p-8 text-center text-slate-400 text-sm">Belum ada data produk. Klik <b>+ Produk</b> atau <b>Import Produk &amp; Stok</b>.</div>
     </div>
   </section>
 
@@ -179,7 +221,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
-          <h2 class="font-bold text-base sm:text-lg">🔄 Pencatatan Barang Masuk & Keluar</h2>
+          <h2 class="font-bold text-base sm:text-lg">🔄 Pencatatan Barang Masuk &amp; Keluar</h2>
           <p class="text-xs text-slate-500 mt-1">Catat barang masuk ke gudang atau barang keluar ke customer/umum beserta serial number.</p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -207,7 +249,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
             <tr>
               <th class="p-4">Waktu</th>
               <th class="p-4">Jenis</th>
-              <th class="p-4">SKU & Produk</th>
+              <th class="p-4">SKU &amp; Produk</th>
               <th class="p-4">Qty</th>
               <th class="p-4">Tujuan / Customer</th>
               <th class="p-4">Serial Number</th>
@@ -270,7 +312,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 class="font-bold text-base sm:text-lg">🏢 Monitoring Stok di Gudang & di Customer</h2>
+          <h2 class="font-bold text-base sm:text-lg">🏢 Monitoring Stok di Gudang &amp; di Customer</h2>
           <p class="text-xs text-slate-500 mt-1">Pantau posisi stok di gudang dan di customer, serta proses retur barang dari customer.</p>
         </div>
         <button @click="openReturnModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold">↩ Retur Customer ke Gudang</button>
@@ -405,7 +447,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
           <thead class="bg-slate-50 text-xs uppercase text-slate-400">
             <tr>
               <th class="p-4">Serial Number</th>
-              <th class="p-4">SKU & Produk</th>
+              <th class="p-4">SKU &amp; Produk</th>
               <th class="p-4">Lokasi Saat Ini</th>
               <th class="p-4">Customer / Keterangan</th>
               <th class="p-4">Update Terakhir</th>
@@ -465,7 +507,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
   <!-- 5. ORDER & STOCK -->
   <section x-show="activeTab==='order_stock'" class="space-y-5">
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-      <div class="p-4 sm:p-5 border-b"><h2 class="font-bold text-base sm:text-lg">📦 Monitoring Stok & Reorder Point</h2><p class="text-xs text-slate-500 mt-1">Status stok berdasarkan minimum stok gudang setiap produk.</p></div>
+      <div class="p-4 sm:p-5 border-b"><h2 class="font-bold text-base sm:text-lg">📦 Monitoring Stok &amp; Reorder Point</h2><p class="text-xs text-slate-500 mt-1">Status stok berdasarkan minimum stok gudang setiap produk.</p></div>
       <div class="table-wrap desktop-table"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">SKU</th><th class="p-4">Produk</th><th class="p-4">Stok Gudang</th><th class="p-4">Stok Customer</th><th class="p-4">Min. Stok</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead><tbody class="divide-y"><template x-for="p in filteredProducts" :key="p.id"><tr><td class="p-4 font-mono text-xs" x-text="p.sku"></td><td class="p-4 font-semibold" x-text="p.nama"></td><td class="p-4 font-semibold" x-text="p.sistem+' pcs'"></td><td class="p-4 text-amber-600 font-semibold" x-text="(p.stokCustomer||0)+' pcs'"></td><td class="p-4" x-text="p.minStok+' pcs'"></td><td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold" :class="p.sistem<=p.minStok?'bg-rose-50 text-rose-600':'bg-emerald-50 text-emerald-600'" x-text="p.sistem<=p.minStok?'Perlu Restock':'Aman'"></span></td><td class="p-4"><button @click="openOrderModal(p.id,suggestedOrderQty(p))" class="bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-semibold">Buat PO</button></td></tr></template></tbody></table></div>
       <div class="mobile-card p-3 space-y-2.5">
         <template x-for="p in filteredProducts" :key="p.id">
@@ -521,7 +563,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 sm:p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
-          <h2 class="font-bold text-base sm:text-lg">📋 Stock Opname Fisik & Laporan Inventory</h2>
+          <h2 class="font-bold text-base sm:text-lg">📋 Stock Opname Fisik &amp; Laporan Inventory</h2>
           <p class="text-xs text-slate-500 mt-1">Masukkan stok fisik gudang aktual, simpan sesi opname, atau unduh laporan inventory lengkap ke Excel.</p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -575,7 +617,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 
   <div class="border rounded-xl p-3.5 bg-slate-50 space-y-2">
    <div class="flex flex-wrap justify-between items-center gap-2">
-    <b class="text-sm text-indigo-700">1. Format Import Produk & Stok</b>
+    <b class="text-sm text-indigo-700">1. Format Import Produk &amp; Stok</b>
     <button @click="downloadProductTemplate()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">⬇ Download Template Produk</button>
    </div>
    <p class="text-xs text-slate-600">Kolom: <code class="bg-white px-1.5 py-0.5 border rounded">sku</code>, <code class="bg-white px-1.5 py-0.5 border rounded">nama</code>, <code class="bg-white px-1.5 py-0.5 border rounded">stok_gudang</code>, <code class="bg-white px-1.5 py-0.5 border rounded">stok_fisik</code>, <code class="bg-white px-1.5 py-0.5 border rounded">stok_customer</code>, <code class="bg-white px-1.5 py-0.5 border rounded">min_stok</code>, <code class="bg-white px-1.5 py-0.5 border rounded">permintaan_30_hari</code></p>
@@ -747,6 +789,7 @@ function warehouseApp(){
   activeTab:'demand',
   search:'',orderSearch:'',historySearch:'',movementSearch:'',movementTypeFilter:'ALL',serialSearch:'',serialLocationFilter:'ALL',
   showProductModal:false,showOrderModal:false,showMovementModal:false,showReturnModal:false,showSerialModal:false,showFormatGuide:false,
+  autoDownloadSvgLogo:true,
   isEdit:false,selectedHistory:null,selectedSerial:null,
   products:read('warehouse_products',[]).map(p=>({...p,stokCustomer:Number(p.stokCustomer||0)})),
   orders:read('warehouse_orders',[]),
@@ -770,6 +813,53 @@ function warehouseApp(){
    localStorage.setItem('warehouse_serials',JSON.stringify(this.serials));
   },
   tabClass(t){return this.activeTab===t?'bg-white text-indigo-600 shadow-sm':'text-slate-600 hover:text-slate-900';},
+
+  // Logo SVG CJ Tech Helpers
+  getCjTechLogoSvgString(){
+   const el=document.getElementById('cjTechLogoSvg');
+   if(el){
+    const serializer=new XMLSerializer();
+    let svg=serializer.serializeToString(el);
+    if(!svg.includes('xmlns="http://www.w3.org/2000/svg"')){
+     svg=svg.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    return svg;
+   }
+   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="20" fill="#4f46e5"/><polygon points="48,20 72,34 48,48 24,34" fill="#fff"/><text x="48" y="82" text-anchor="middle" fill="#67e8f9" font-family="sans-serif" font-size="10" font-weight="bold">CJ TECH</text></svg>`;
+  },
+  getCjTechLogoDataUri(){
+   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(this.getCjTechLogoSvgString());
+  },
+  downloadCjTechLogoSvg(){
+   const blob=new Blob([this.getCjTechLogoSvgString()],{type:'image/svg+xml;charset=utf-8'});
+   const url=URL.createObjectURL(blob);
+   const a=document.createElement('a');
+   a.href=url;
+   a.download='CJ_Tech_Sistem_Terpadu_Logo.svg';
+   document.body.appendChild(a);
+   a.click();
+   document.body.removeChild(a);
+   setTimeout(()=>URL.revokeObjectURL(url),1000);
+  },
+  exportWorkbookWithLogo(rows,sheetName,fileName,reportTitle){
+   if(!this.checkXlsx())return;
+   const nowStr=new Date().toLocaleString('id-ID');
+   const headerRows=[
+    ['CJ TECH · SISTEM GUDANG TERPADU'],
+    ['Laporan',reportTitle||''],
+    ['Tanggal Cetak',nowStr],
+    ['Logo SVG (Data URI)',this.getCjTechLogoDataUri()],
+    []
+   ];
+   const ws=XLSX.utils.aoa_to_sheet(headerRows);
+   XLSX.utils.sheet_add_json(ws,rows,{origin:'A6',skipHeader:false});
+   const wb=XLSX.utils.book_new();
+   XLSX.utils.book_append_sheet(wb,ws,sheetName);
+   XLSX.writeFile(wb,fileName);
+   if(this.autoDownloadSvgLogo){
+    setTimeout(()=>this.downloadCjTechLogoSvg(),250);
+   }
+  },
 
   get totalWarehouseStock(){return this.products.reduce((s,p)=>s+Number(p.sistem||0),0);},
   get totalCustomerStock(){return this.products.reduce((s,p)=>s+Number(p.stokCustomer||0),0);},
@@ -976,26 +1066,18 @@ function warehouseApp(){
 
   // Excel Template & Upload
   downloadProductTemplate(){
-   if(!this.checkXlsx())return;
    const sample=[
     {sku:'PC-001',nama:'Facial Wash 100ml',stok_gudang:120,stok_fisik:120,stok_customer:15,min_stok:30,permintaan_30_hari:180},
     {sku:'PC-002',nama:'Body Lotion 250ml',stok_gudang:85,stok_fisik:85,stok_customer:10,min_stok:25,permintaan_30_hari:110}
    ];
-   const ws=XLSX.utils.json_to_sheet(sample);
-   const wb=XLSX.utils.book_new();
-   XLSX.utils.book_append_sheet(wb,ws,'Template Produk');
-   XLSX.writeFile(wb,'Template_Upload_Produk.xlsx');
+   this.exportWorkbookWithLogo(sample,'Template Produk','Template_Upload_Produk.xlsx','Template Upload Produk & Stok');
   },
   downloadSerialTemplate(){
-   if(!this.checkXlsx())return;
    const sample=[
     {serial_number:'SN-PC-001-01',sku:'PC-001',lokasi:'Gudang',customer:''},
     {serial_number:'SN-PC-001-02',sku:'PC-001',lokasi:'Customer',customer:'Toko Berkah'}
    ];
-   const ws=XLSX.utils.json_to_sheet(sample);
-   const wb=XLSX.utils.book_new();
-   XLSX.utils.book_append_sheet(wb,ws,'Template Serial');
-   XLSX.writeFile(wb,'Template_Upload_Serial_Number.xlsx');
+   this.exportWorkbookWithLogo(sample,'Template Serial','Template_Upload_Serial_Number.xlsx','Template Upload Serial Number');
   },
   readExcelRows(file,cb){
    if(!file)return;
@@ -1065,29 +1147,24 @@ function warehouseApp(){
 
   checkXlsx(){if(!window.XLSX){alert('Library Excel belum termuat. Periksa koneksi internet.');return false;}return true;},
   exportInventoryReport(){
-   if(!this.checkXlsx())return;
    const rows=this.products.map(p=>({'SKU':p.sku,'Produk':p.nama,'Stok Gudang (Sistem)':p.sistem,'Stok Fisik Gudang':p.fisik,'Selisih':Number(p.fisik)-Number(p.sistem),'Stok di Customer':p.stokCustomer||0,'Total Stok':this.totalProductStock(p),'Min. Stok':p.minStok,'Permintaan 30 Hari':p.permintaan30Hari,'Status Restock':Number(p.sistem)<=Number(p.minStok)?'Perlu Restock':'Aman'}));
-   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Laporan Inventory');XLSX.writeFile(wb,'Laporan_Inventory.xlsx');
+   this.exportWorkbookWithLogo(rows,'Laporan Inventory','Laporan_Inventory_CJ_Tech.xlsx','Laporan Inventory');
   },
   exportMovements(){
-   if(!this.checkXlsx())return;
    const rows=this.movements.map(m=>({'Waktu':m.waktu,'Jenis':m.tipe==='IN'?'Barang Masuk':'Barang Keluar','SKU':m.sku,'Produk':m.namaProduk,'Jumlah (pcs)':m.qty,'Customer / Tujuan':m.customer||(m.tipe==='IN'?'Gudang Utama':'Keluar Umum'),'Serial Number':(m.serials||[]).join(', '),'Catatan':m.catatan||'-'}));
-   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Mutasi Masuk Keluar');XLSX.writeFile(wb,'Mutasi_Barang_Masuk_Keluar.xlsx');
+   this.exportWorkbookWithLogo(rows,'Mutasi Masuk Keluar','Mutasi_Barang_Masuk_Keluar_CJ_Tech.xlsx','Mutasi Barang Masuk & Keluar');
   },
   exportSerials(){
-   if(!this.checkXlsx())return;
    const rows=this.serials.map(s=>({'Serial Number':s.sn,'SKU':s.sku,'Produk':s.namaProduk,'Lokasi':s.lokasi,'Customer':s.customer||'-','Update Terakhir':s.updatedAt}));
-   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Serial Number');XLSX.writeFile(wb,'Tracking_Serial_Number.xlsx');
+   this.exportWorkbookWithLogo(rows,'Serial Number','Tracking_Serial_Number_CJ_Tech.xlsx','Tracking Serial Number');
   },
   exportOrders(){
-   if(!this.checkXlsx())return;
    const rows=this.orders.map(o=>({'No. PO':o.kode,'Produk':o.namaProduk,'Supplier':o.supplier,'Jumlah (pcs)':o.qty,'Tanggal':o.tanggal||'-','Status':o.status}));
-   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Daftar PO');XLSX.writeFile(wb,'Daftar_Order_Pembelian.xlsx');
+   this.exportWorkbookWithLogo(rows,'Daftar PO','Daftar_Order_Pembelian_CJ_Tech.xlsx','Daftar Order Pembelian (PO)');
   },
   exportHistory(){
-   if(!this.checkXlsx())return;
    const rows=[];this.history.forEach(h=>h.items.forEach(i=>rows.push({'Kode Opname':h.kode,'Waktu':h.waktu,'SKU':i.sku,'Produk':i.nama,'Stok Gudang Sistem':i.sistem,'Stok Customer':i.stokCustomer||0,'Stok Fisik':i.fisik,'Selisih':Number(i.fisik)-Number(i.sistem)})));
-   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Riwayat Opname');XLSX.writeFile(wb,'Riwayat_Stock_Opname.xlsx');
+   this.exportWorkbookWithLogo(rows,'Riwayat Opname','Riwayat_Stock_Opname_CJ_Tech.xlsx','Riwayat Stock Opname');
   },
   clearStorage(){
    if(!confirm('Hapus seluruh data tersimpan (produk, mutasi, serial, PO, dan riwayat opname)?'))return;
