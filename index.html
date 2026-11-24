@@ -140,13 +140,6 @@ button:disabled{opacity:.4;cursor:not-allowed}
         <button @click="showFormatGuide=true" class="bg-amber-50 hover:bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg font-semibold">📄 Format Upload</button>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <label class="inline-flex items-center gap-1.5 text-slate-600 font-medium cursor-pointer">
-          <input type="checkbox" x-model="autoDownloadSvgLogo" class="rounded border-slate-300 text-indigo-600">
-          <span>Sertakan file Logo SVG saat export Excel</span>
-        </label>
-        <span class="text-slate-300">|</span>
-        <button @click="downloadCjTechLogoSvg()" class="text-sky-700 hover:underline font-semibold">🎨 Logo CJ Tech (.svg)</button>
-        <span class="text-slate-300">|</span>
         <button @click="downloadProductTemplate()" class="text-indigo-600 hover:underline font-semibold">⬇ Template Produk (.xlsx)</button>
         <span class="text-slate-300">|</span>
         <button @click="downloadSerialTemplate()" class="text-emerald-600 hover:underline font-semibold">⬇ Template Serial (.xlsx)</button>
@@ -789,7 +782,6 @@ function warehouseApp(){
   activeTab:'demand',
   search:'',orderSearch:'',historySearch:'',movementSearch:'',movementTypeFilter:'ALL',serialSearch:'',serialLocationFilter:'ALL',
   showProductModal:false,showOrderModal:false,showMovementModal:false,showReturnModal:false,showSerialModal:false,showFormatGuide:false,
-  autoDownloadSvgLogo:true,
   isEdit:false,selectedHistory:null,selectedSerial:null,
   products:read('warehouse_products',[]).map(p=>({...p,stokCustomer:Number(p.stokCustomer||0)})),
   orders:read('warehouse_orders',[]),
@@ -848,7 +840,6 @@ function warehouseApp(){
     ['CJ TECH · SISTEM GUDANG TERPADU'],
     ['Laporan',reportTitle||''],
     ['Tanggal Cetak',nowStr],
-    ['Logo SVG (Data URI)',this.getCjTechLogoDataUri()],
     []
    ];
    const ws=XLSX.utils.aoa_to_sheet(headerRows);
